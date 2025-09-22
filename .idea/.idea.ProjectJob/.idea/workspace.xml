@@ -10,11 +10,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a301c04b-5db7-4c0e-955d-636fcf939e53" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.ProjectJob/.idea/indexLayout.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.ProjectJob/.idea/projectSettingsUpdater.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/.idea.ProjectJob/.idea/vcs.xml" afterDir="false" />
-    </list>
+    <list default="true" id="a301c04b-5db7-4c0e-955d-636fcf939e53" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -159,7 +155,7 @@
       <workItem from="1758543959574" duration="470000" />
       <workItem from="1758544442105" duration="2364000" />
       <workItem from="1758546814378" duration="36000" />
-      <workItem from="1758547412473" duration="309000" />
+      <workItem from="1758547412473" duration="611000" />
     </task>
     <task id="LOCAL-00001" summary="Create connection and testing entites">
       <option name="closed" value="true" />
