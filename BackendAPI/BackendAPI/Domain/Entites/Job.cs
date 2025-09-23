@@ -20,6 +20,6 @@ public class Job
     public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
     
     public Guid CompanyId { get; set; }
-    [ForeignKey("CompanyId")]
-    public virtual Company Company { get; set; }
+   // [ForeignKey("CompanyId")]
+    //public virtual Company Company { get; set; }
 }

@@ -1,0 +1,61 @@
+@page "/ShowCompanies"
+@inject HttpClient Http
+@using Shared.DTOs
+
+<h3>ShowCompanies</h3>
+
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <p>@statusMessage</p>
+}
+
+@if (companies == null)
+{
+    <p>Loading...</p>
+}
+else if (!companies.Any())
+{
+    <p>No candidats found.</p>
+}
+else
+{
+    <ul>
+        @foreach (var company in companies)
+        {
+            <li>@company.CompanyName @company.OfficeAddress - @company.OfficePhone</li>
+            <ol>
+                @foreach (var job in @company.JobIds)
+                {
+                    <li>@job</li>
+                }
+            </ol>
+        }
+    </ul>
+}
+
+@code {
+    protected List<CompanyDto> companies;
+    protected string statusMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            companies = await Http.GetFromJsonAsync<List<CompanyDto>>("http://localhost:5142/api/Company");
+            
+            if (companies != null && companies.Any())
+            {
+                statusMessage = "Companies loaded successfully!";
+            }
+            else
+            {
+                statusMessage = "No companies found.";
+            }
+        }
+        catch(Exception ex)
+        {
+            statusMessage = $"Error loading companies: {ex.Message}";
+        }
+    }
+
+}

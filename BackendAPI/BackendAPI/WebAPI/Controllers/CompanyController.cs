@@ -23,24 +23,26 @@ public class CompanyController : ControllerBase
         return Ok(dbcontext.Companies.ToList());
     }
 
-    [HttpGet("{id}")]
-    public IActionResult GetCompanyById(int id)
+    [HttpGet("{name}")]
+    public IActionResult GetCompanyById(string name)
     {
-        return Ok(dbcontext.Users.Find(id));
+        return Ok(dbcontext.Users.Find(name));
+    }
+
+    [HttpGet("{id}")]
+    public IActionResult GetCompanyJobsById(Guid Id)
+    {
+        return Ok(dbcontext.Jobs.Where(x => x.CompanyId == Id));
     }
 
     [HttpPost]
-    public IActionResult AddCompany([FromBody] CompanyDto addCompanyDto)
+    public IActionResult CreateCompany([FromBody] CompanyDto addCompanyDto)
     {
         if (!ModelState.IsValid) 
         {
             return BadRequest(ModelState);
         }
         
-        var jobs = dbcontext.Jobs
-            .Where(j => addCompanyDto.JobIds.Contains(j.Id))
-            .ToList();
-
         var company = new Company()
         {
             Email = addCompanyDto.Email,
@@ -50,7 +52,7 @@ public class CompanyController : ControllerBase
             City = addCompanyDto.City,
             OfficeAddress = addCompanyDto.OfficeAddress,
             OfficePhone = addCompanyDto.OfficePhone,
-            JobIds = jobs.Select(j => j.Id).ToList()
+            JobIds = null,
         };
 
         dbcontext.Users.Add(company);

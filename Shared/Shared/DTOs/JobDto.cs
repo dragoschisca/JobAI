@@ -13,5 +13,4 @@ namespace Shared.DTOs;
         public Location Location { get; set; }
         public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
         public Guid CompanyId { get; set; }
-        public CompanyDto Company { get; set; }
     } 

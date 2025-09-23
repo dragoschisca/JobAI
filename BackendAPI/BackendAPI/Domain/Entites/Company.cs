@@ -6,5 +6,5 @@ public class Company : User
     public string City { get; set; }
     public string OfficeAddress { get; set; }
     public string OfficePhone { get; set; }
-    public ICollection<Guid> JobIds { get; set; } = new List<Guid>();
+    public ICollection<Guid>? JobIds { get; set; } = new List<Guid>();
 }

@@ -1,0 +1,77 @@
+@page "/AddCompany"
+@inject NavigationManager navManager
+@inject HttpClient Http
+@using Shared.DTOs
+
+<div class="row justify-content-center">
+    <div class="col-6">
+        <EditForm method="post" FormName="AddCompanyForm" OnValidSubmit="AddCompanyFromForm" Model="CompanyDto" autocomplete="off">
+            <h3>Add company form </h3>
+            <div class="mb-3">
+                <label for="Email" class="form-label">
+                    Email
+                </label>
+                <InputText id="Email" @bind-Value="CompanyDto.Email" class="form-control shadow-none"/>
+            </div>
+            <div class="mb-3">
+                <label for="Password" class="form-label">
+                    Password
+                </label>
+                <InputText id="Password" @bind-Value="CompanyDto.Password" class="form-control shadow-none"/>
+            </div>
+            <div class="mb-3">
+                <label for="CompanyName" class="form-label">
+                    Company name
+                </label>
+                <InputText id="CompanyName" @bind-Value="CompanyDto.CompanyName" class="form-control shadow-none"/>
+            </div>
+            <div class="mb-3">
+                <label for="City" class="form-label">
+                    City
+                </label>
+                <InputText id="City" @bind-Value="CompanyDto.City" class="form-control shadow-none"/>
+            </div>
+            <div class="mb-3">
+                <label for="OfficeAddress" class="form-label">
+                    Office address
+                </label>
+                <InputText id="OfficeAddress" @bind-Value="CompanyDto.OfficeAddress" class="form-control shadow-none"/>
+            </div>
+            <div class="mb-3">
+                <label for="OfficePhone" class="form-label">
+                    Office phone
+                </label>
+                <InputText id="OfficePhone" @bind-Value="CompanyDto.OfficePhone" class="form-control shadow-none"/>
+            </div>
+            
+            <div class="mb-3">
+                <button class="btn btn-primary shadow-none">
+                    Submit
+                </button>
+            </div>
+            <DataAnnotationsValidator/>
+            <ValidationSummary/>
+        </EditForm>
+    </div>
+</div>
+
+@code
+{
+    [SupplyParameterFromForm]
+    public CompanyDto CompanyDto { get; set; } = new();
+
+    protected async Task AddCompanyFromForm()
+    {
+        var response = await Http.PostAsJsonAsync("http://localhost:5142/api/Company", CompanyDto);
+
+        if (response.IsSuccessStatusCode)
+        {
+            navManager.NavigateTo("/ShowCompanies");
+        }
+        else
+        {
+            var strResponse = await response.Content.ReadAsStringAsync();
+            Console.WriteLine("Json response: " + strResponse);
+        }
+    }
+}

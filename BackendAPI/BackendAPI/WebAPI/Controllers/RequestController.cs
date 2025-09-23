@@ -1,5 +1,6 @@
 using JobAPI.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
+using Shared.DTOs;
 
 namespace BackendAPI.Controllers;
 
@@ -27,4 +28,6 @@ public class RequestController : ControllerBase
         var result = dbcontext.Requests.Where(r => r.UserId == id).ToList();
         return Ok(result);
     }
+
+   
 }

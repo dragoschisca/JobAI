@@ -10,7 +10,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a301c04b-5db7-4c0e-955d-636fcf939e53" name="Changes" comment="" />
+    <list default="true" id="a301c04b-5db7-4c0e-955d-636fcf939e53" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/.idea.ProjectJob/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.ProjectJob/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -20,7 +22,7 @@
     <option name="firstShow" value="false" />
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/BackendAPI" />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="GitHubPullRequestSearchHistory">{
   &quot;lastFilter&quot;: {
@@ -44,6 +46,8 @@
     <setting file="file://$PROJECT_DIR$/BackendAPI/BackendAPI/WebAPI/Controllers/JobController.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/BackendAPI/BackendAPI/WebAPI/Controllers/RequestController.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/BackendAPI/BackendAPI/appsettings.json" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/FrontendBlazor/FrontendBlazor/Components/Pages/Company/AddCompany.razor" root0="FORCE_HIGHLIGHTING" root1="FORCE_HIGHLIGHTING" root2="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/FrontendBlazor/FrontendBlazor/Components/Pages/Company/ShowCompanies.razor" root0="FORCE_HIGHLIGHTING" root1="FORCE_HIGHLIGHTING" root2="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Shared/Shared/DTOs/AdminDto.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Shared/Shared/DTOs/CandidatDto.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Shared/Shared/DTOs/CompanyDto.cs" root0="FORCE_HIGHLIGHTING" />
@@ -64,10 +68,12 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     ".NET Launch Settings Profile.BackendAPI: http.executor": "Run",
+    ".NET Launch Settings Profile.FrontendBlazor: http.executor": "Run",
     "ASKED_SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "ModuleVcsDetector.initialDetectionPerformed": "true",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "git-widget-placeholder": "main",
     "last_opened_file_path": "/Users/dragoschisca/ProjectJob/ProjectJob.sln",
@@ -79,7 +85,7 @@
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
-  <component name="RunManager" selected=".NET Launch Settings Profile.BackendAPI: http">
+  <component name="RunManager" selected=".NET Launch Settings Profile.FrontendBlazor: http">
     <configuration name="BackendAPI: http" type="LaunchSettings" factoryName=".NET Launch Settings Profile">
       <option name="LAUNCH_PROFILE_PROJECT_FILE_PATH" value="$PROJECT_DIR$/BackendAPI/BackendAPI/BackendAPI.csproj" />
       <option name="LAUNCH_PROFILE_TFM" value="net9.0" />
@@ -155,7 +161,8 @@
       <workItem from="1758543959574" duration="470000" />
       <workItem from="1758544442105" duration="2364000" />
       <workItem from="1758546814378" duration="36000" />
-      <workItem from="1758547412473" duration="611000" />
+      <workItem from="1758547412473" duration="1686000" />
+      <workItem from="1758630241587" duration="3890000" />
     </task>
     <task id="LOCAL-00001" summary="Create connection and testing entites">
       <option name="closed" value="true" />

@@ -56,6 +56,7 @@ public class JobController : ControllerBase
             Experience = addJobDto.Experience,
             WorkTime = addJobDto.WorkTime,
             Location = addJobDto.Location,
+            CompanyId = addJobDto.CompanyId
         };
         
         dbcontext.Jobs.Add(job);
