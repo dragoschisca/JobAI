@@ -5,7 +5,7 @@ namespace Shared.DTOs;
         public string Title { get; set; }
         public string Description { get; set; }
         public string Skills { get; set; }
-        public bool IsSalaryMentioned { get; set; }
+        public bool IsSalaryMentionated { get; set; }
         public int? Salary { get; set; }
         public string Category { get; set; }
         public Experience Experience { get; set; }

@@ -46,7 +46,7 @@ public class CandidatController : ControllerBase
             FirstName = candidatDto.FirstName,
             LastName = candidatDto.LastName,
             CvPath = candidatDto.CvPath,
-            Skills = candidatDto.Skills
+            AboutMe = candidatDto.AboutMe
         };
         
         dbcontext.Users.Add(candidat);
@@ -68,7 +68,7 @@ public class CandidatController : ControllerBase
         candidat.FirstName = candidatDto.FirstName;
         candidat.LastName = candidatDto.LastName;
         candidat.CvPath = candidatDto.CvPath;
-        candidat.Skills = candidatDto.Skills;
+        candidat.AboutMe = candidatDto.AboutMe;
         
         dbcontext.SaveChanges();
         return Ok(candidat);

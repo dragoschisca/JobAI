@@ -1,0 +1,112 @@
+@page "/AddJob"
+@inject NavigationManager navManager
+@inject HttpClient Http
+@using Shared.DTOs
+
+<div class="row justify-content-center">
+    <div class="col-6">
+        <EditForm method="post" FormName="AddJobForm" OnValidSubmit="AddJobForm" Model="JobDto" autocomplete="off">
+            <h3>Add job form </h3>
+            <div class="mb-3">
+                <label for="Title" class="form-label">
+                    Title
+                </label>
+                <InputText id="Title" @bind-Value="JobDto.Title" class="form-control border-dark"/>
+            </div>
+            <div class="mb-3">
+                <label for="Description" class="form-label">
+                    Description
+                </label>
+                <InputText id="Description" @bind-Value="JobDto.Description" class="form-control border-dark"/>
+            </div>
+            <div class="mb-3">
+                <label for="Skills" class="form-label">
+                    Skills
+                </label>
+                <InputText id="Skills" @bind-Value="JobDto.Skills" class="form-control border-dark"/>
+            </div>
+            <div class="mb-3">
+                <label for="IsSalaryMentionated" class="form-label">
+                    Is salary mentionated
+                </label>
+                <InputCheckbox id="IsSalaryMentionated" @bind-Value="JobDto.IsSalaryMentionated" class="border-dark"/>
+            </div>
+            @if (JobDto.IsSalaryMentionated)
+            {
+                <div class="mb-3">
+                    <label for="Salary" class="form-label">
+                        Salary
+                    </label>
+                    <InputNumber id="Salary" @bind-Value="JobDto.Salary" class="form-control border-dark"/>
+                </div>
+            }
+            <div class="mb-3">
+                <label for="Category" class="form-label">
+                    Category
+                </label>
+                <InputText id="Category" @bind-Value="JobDto.Category" class="form-control border-dark"/>
+            </div>
+            <div class="mb-3">
+                <label for="Experience" class="form-label">
+                    Experience
+                </label>
+                <InputSelect id="Experience" @bind-Value="JobDto.Experience" class="form-control border-dark">
+                    <option value = "0">No experience</option>
+                    <option value = "1">Small experience</option>
+                    <option value = "2">Medium experience</option>
+                    <option value = "3">No Large experience</option>
+                </InputSelect>
+            </div>
+            <div class="mb-3">
+                <label for="WorkTime" class="form-label">
+                    Work time
+                </label>
+                <InputSelect id="WorkTime" @bind-Value="JobDto.WorkTime" class="form-control border-dark">
+                    <option value = "0">Full time</option>
+                    <option value = "1">Part time</option>
+                    <option value = "2">Flexible time</option>
+                    <option value = "3">In turns</option>
+                </InputSelect>
+            </div>
+            <div class="mb-3">
+                <label for="Location" class="form-label">
+                    Location
+                </label>
+                <InputSelect id="Location" @bind-Value="JobDto.Location" class="form-control border-dark">
+                    <option value = "0">Local</option>
+                    <option value = "1">Remote</option>
+                    <option value = "2">Hybrid</option>
+                    <option value = "3">In turns</option>
+                </InputSelect>
+            </div>
+            <div class="mb-3">
+                <button class="btn btn-primary shadow-none">
+                    Submit
+                </button>
+            </div>
+            <DataAnnotationsValidator/>
+            <ValidationSummary/>
+        </EditForm>
+    </div>
+</div>
+
+@code
+{
+    [SupplyParameterFromForm]
+    public JobDto JobDto { get; set; } = new();
+
+    protected async Task AddJobForm()
+    {
+        var response = await Http.PostAsJsonAsync("http://localhost:5142/api/Job", JobDto);
+
+        if (response.IsSuccessStatusCode)
+        {
+            navManager.NavigateTo("/ShowJobs");
+        }
+        else
+        {
+            var strResponse = await response.Content.ReadAsStringAsync();
+            Console.WriteLine("Json response: " + strResponse);
+        }
+    }
+}

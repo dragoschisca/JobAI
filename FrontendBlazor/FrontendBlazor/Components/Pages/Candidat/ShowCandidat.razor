@@ -1,0 +1,55 @@
+@page "/ShowCandidats"
+@inject HttpClient Http
+@using Shared.DTOs
+
+<h3>Show Candidats</h3>
+
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <p>@statusMessage</p>
+}
+
+@if (candidats == null)
+{
+    <p>Loading...</p>
+}
+else if (!candidats.Any())
+{
+    <p>No candidats found.</p>
+}
+else
+{
+    <ul>
+        @foreach (var candidat in candidats)
+        {
+            <li>@candidat.FirstName @candidat.LastName - @candidat.CvPath</li>
+        }
+    </ul>
+}
+
+@code {
+    protected List<CandidatDto> candidats;
+    protected string statusMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            candidats = await Http.GetFromJsonAsync<List<CandidatDto>>("http://localhost:5142/api/Candidat");
+            
+            if (candidats != null && candidats.Any())
+            {
+                statusMessage = "Candidats loaded successfully!";
+            }
+            else
+            {
+                statusMessage = "No companies found.";
+            }
+        }
+        catch(Exception ex)
+        {
+            statusMessage = $"Error loading candidats: {ex.Message}";
+        }
+    }
+
+}

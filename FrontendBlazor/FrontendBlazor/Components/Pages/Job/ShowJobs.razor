@@ -1,0 +1,73 @@
+@page "/ShowJobs"
+@inject HttpClient Http
+@using Shared.DTOs
+
+<h3>Show Jobs</h3>
+
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <p>@statusMessage</p>
+}
+
+@if (jobs == null)
+{
+    <p>Loading...</p>
+}
+else if (!jobs.Any())
+{
+    <p>No jobs found.</p>
+}
+else
+{
+    <ul>
+        @foreach (var job in jobs)
+        {
+            <li>
+                <p>@job.Title @job.Category - @job.WorkTime</p>
+                @if (job.IsSalaryMentionated)
+                {
+                    <p>Salary: @job.Salary</p>
+                }
+                <p>Company: 
+                    @foreach (var company in companies)
+                    {
+                        if (company.Id == job.CompanyId)
+                        {
+                            @company.CompanyName
+                        }
+                    }
+                
+                </p>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    protected List<JobDto> jobs;
+    protected List<CompanyDto> companies;
+    protected string statusMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            jobs = await Http.GetFromJsonAsync<List<JobDto>>("http://localhost:5142/api/Job");
+            companies = await Http.GetFromJsonAsync<List<CompanyDto>>("http://localhost:5142/api/Company");
+            
+            if (jobs != null && jobs.Any())
+            {
+                statusMessage = "Jobs loaded successfully!";
+            }
+            else
+            {
+                statusMessage = "No jobs found.";
+            }
+        }
+        catch(Exception ex)
+        {
+            statusMessage = $"Error loading jobs: {ex.Message}";
+        }
+    }
+
+}

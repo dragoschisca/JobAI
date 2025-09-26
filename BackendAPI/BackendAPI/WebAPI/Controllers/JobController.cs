@@ -50,7 +50,7 @@ public class JobController : ControllerBase
             Title = addJobDto.Title,
             Description = addJobDto.Description,
             Skills = addJobDto.Skills,
-            IsSalaryMentionated = addJobDto.IsSalaryMentioned,
+            IsSalaryMentionated = addJobDto.IsSalaryMentionated,
             Salary = addJobDto.Salary,
             Category = addJobDto.Category,
             Experience = addJobDto.Experience,
@@ -72,7 +72,7 @@ public class JobController : ControllerBase
         job.Title = updateJobDto.Title;
         job.Description = updateJobDto.Description;
         job.Skills = updateJobDto.Skills;
-        job.IsSalaryMentionated = updateJobDto.IsSalaryMentioned;
+        job.IsSalaryMentionated = updateJobDto.IsSalaryMentionated;
         job.Salary = updateJobDto.Salary;
         job.Category = updateJobDto.Category;
         job.Experience = updateJobDto.Experience;
