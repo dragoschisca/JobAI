@@ -24,15 +24,15 @@ public class CompanyController : ControllerBase
     }
 
     [HttpGet("{name}")]
-    public IActionResult GetCompanyById(string name)
+    public IActionResult GetCompanyByName(string name)
     {
         return Ok(dbcontext.Users.Find(name));
     }
 
-    [HttpGet("{id}")]
+    [HttpGet("GetCompanyJobsById/{id}")]
     public IActionResult GetCompanyJobsById(Guid Id)
     {
-        return Ok(dbcontext.Jobs.Where(x => x.CompanyId == Id));
+        return Ok(dbcontext.Jobs.Where(x => x.CompanyId == Id).ToList());
     }
 
     [HttpPost]

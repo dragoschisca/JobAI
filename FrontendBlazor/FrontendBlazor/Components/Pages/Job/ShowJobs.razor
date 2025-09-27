@@ -2,45 +2,58 @@
 @inject HttpClient Http
 @using Shared.DTOs
 
-<h3>Show Jobs</h3>
+<h3 class="mb-4">Available Jobs</h3>
 
 @if (!string.IsNullOrEmpty(statusMessage))
 {
-    <p>@statusMessage</p>
+    <div class="alert alert-info">@statusMessage</div>
 }
 
 @if (jobs == null)
 {
-    <p>Loading...</p>
+    <div class="text-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
 }
 else if (!jobs.Any())
 {
-    <p>No jobs found.</p>
+    <p class="text-muted">No jobs found.</p>
 }
 else
 {
-    <ul>
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         @foreach (var job in jobs)
         {
-            <li>
-                <p>@job.Title @job.Category - @job.WorkTime</p>
-                @if (job.IsSalaryMentionated)
-                {
-                    <p>Salary: @job.Salary</p>
-                }
-                <p>Company: 
-                    @foreach (var company in companies)
-                    {
-                        if (company.Id == job.CompanyId)
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">@job.Title</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">@job.Category | @job.WorkTime</h6>
+                        
+                        @if (job.IsSalaryMentionated)
                         {
-                            @company.CompanyName
+                            <p class="card-text"><strong>Salary:</strong> @job.Salary</p>
                         }
-                    }
-                
-                </p>
-            </li>
+
+                        <p class="card-text"><strong>Company:</strong>
+                            @foreach (var company in companies)
+                            {
+                                if (company.Id == job.CompanyId)
+                                {
+                                    @company.CompanyName
+                                }
+                            }
+                        </p>
+                    </div>
+                    <div class="card-footer text-end">
+                        <a href="/JobApply/@job.Id" class="btn btn-primary btn-sm">Apply</a>
+                    </div>
+                </div>
+            </div>
         }
-    </ul>
+    </div>
 }
 
 @code {
@@ -55,19 +68,11 @@ else
             jobs = await Http.GetFromJsonAsync<List<JobDto>>("http://localhost:5142/api/Job");
             companies = await Http.GetFromJsonAsync<List<CompanyDto>>("http://localhost:5142/api/Company");
             
-            if (jobs != null && jobs.Any())
-            {
-                statusMessage = "Jobs loaded successfully!";
-            }
-            else
-            {
-                statusMessage = "No jobs found.";
-            }
+            statusMessage = jobs != null && jobs.Any() ? "Jobs loaded successfully!" : "No jobs found.";
         }
         catch(Exception ex)
         {
             statusMessage = $"Error loading jobs: {ex.Message}";
         }
     }
-
 }

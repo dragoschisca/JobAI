@@ -52,6 +52,7 @@
     <setting file="file://$PROJECT_DIR$/FrontendBlazor/FrontendBlazor/Components/Pages/Company/AddCompany.razor" root0="FORCE_HIGHLIGHTING" root1="FORCE_HIGHLIGHTING" root2="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/FrontendBlazor/FrontendBlazor/Components/Pages/Company/ShowCompanies.razor" root0="FORCE_HIGHLIGHTING" root1="FORCE_HIGHLIGHTING" root2="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/FrontendBlazor/FrontendBlazor/Components/Pages/Job/AddJob.razor" root0="FORCE_HIGHLIGHTING" root1="FORCE_HIGHLIGHTING" root2="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/FrontendBlazor/FrontendBlazor/Components/Pages/Job/JobApply.razor" root0="FORCE_HIGHLIGHTING" root1="FORCE_HIGHLIGHTING" root2="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/FrontendBlazor/FrontendBlazor/Components/Pages/Job/ShowJobs.razor" root0="FORCE_HIGHLIGHTING" root1="FORCE_HIGHLIGHTING" root2="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Shared/Shared/DTOs/AdminDto.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Shared/Shared/DTOs/CandidatDto.cs" root0="FORCE_HIGHLIGHTING" />
@@ -168,7 +169,9 @@
       <workItem from="1758546814378" duration="36000" />
       <workItem from="1758547412473" duration="1686000" />
       <workItem from="1758630241587" duration="4330000" />
-      <workItem from="1758919381971" duration="4119000" />
+      <workItem from="1758919381971" duration="4357000" />
+      <workItem from="1758957031518" duration="2893000" />
+      <workItem from="1758962263696" duration="2586000" />
     </task>
     <task id="LOCAL-00001" summary="Create connection and testing entites">
       <option name="closed" value="true" />
