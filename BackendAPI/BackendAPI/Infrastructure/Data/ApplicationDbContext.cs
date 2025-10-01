@@ -1,7 +1,8 @@
-using JobAPI.Domain.Entites;
+using BackendAPI.Domain.Entites;
 using Microsoft.EntityFrameworkCore;
 
-namespace JobAPI.Infrastructure.Data;
+namespace BackendAPI.Domain.Entites;
+
 
 public class ApplicationDbContext : DbContext
 {

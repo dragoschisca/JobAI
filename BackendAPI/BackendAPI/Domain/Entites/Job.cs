@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Shared.DTOs;
 
-namespace JobAPI.Domain.Entites;
+namespace BackendAPI.Domain.Entites;
 
 public class Job
 {

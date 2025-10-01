@@ -1,6 +1,6 @@
 using Shared.DTOs;
 
-namespace JobAPI.Domain.Entites;
+namespace BackendAPI.Domain.Entites;
 
 public class User
 {

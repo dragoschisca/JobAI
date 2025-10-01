@@ -1,4 +1,4 @@
-namespace JobAPI.Domain.Entites;
+namespace BackendAPI.Domain.Entites;
 
 public class Admin : User
 {

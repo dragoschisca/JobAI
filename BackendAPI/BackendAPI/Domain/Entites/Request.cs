@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using Shared.DTOs;
 
-namespace JobAPI.Domain.Entites;
+namespace BackendAPI.Domain.Entites;
 
 public class Request
 {
@@ -9,12 +10,4 @@ public class Request
     public Guid JobId { get; set; }
     public Guid UserId { get; set; }
     public Status Status { get; set; }
-}
-
-public enum Status
-{
-    Rejected,
-    Loading,
-    Accepted,
-    OnStayding
 }

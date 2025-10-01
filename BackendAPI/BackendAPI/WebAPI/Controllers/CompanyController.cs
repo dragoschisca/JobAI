@@ -1,5 +1,4 @@
-using JobAPI.Domain.Entites;
-using JobAPI.Infrastructure.Data;
+using BackendAPI.Domain.Entites;
 using Microsoft.AspNetCore.Mvc;
 using Shared.DTOs;
 

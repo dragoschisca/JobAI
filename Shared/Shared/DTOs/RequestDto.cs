@@ -9,5 +9,4 @@ public class RequestDto
         public Guid JobId { get; set; }
         public Guid UserId { get; set; }
         public Status Status { get; set; }
-
 }

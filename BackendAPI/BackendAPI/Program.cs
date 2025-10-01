@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using JobAPI.Infrastructure.Data;
+using BackendAPI.Domain.Entites;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);

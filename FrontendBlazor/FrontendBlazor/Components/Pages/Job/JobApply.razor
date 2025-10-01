@@ -1,7 +1,7 @@
 @page "/JobApply/{JobId:guid}"
 @inject HttpClient Http
 @using Shared.DTOs
-@using Microsoft.AspNetCore.Components.Forms
+@rendermode InteractiveServer
 
 <h3>Apply for Job</h3>
 
@@ -16,58 +16,63 @@
 }
 else
 {
-    <!-- Job Details Card -->
     <div class="card mb-4 shadow-sm">
         <div class="card-body">
             <h5 class="card-title">@job.Title</h5>
-            <p class="text-muted">@job.Category | @job.WorkTime | @job.Experience</p>
+            <p>@job.Category | @job.WorkTime | @job.Experience</p>
             @if (job.IsSalaryMentionated)
             {
                 <p><strong>Salary:</strong> @job.Salary</p>
             }
             <p><strong>Location:</strong> @job.Location</p>
-            <p><strong>Skills Required:</strong> @job.Skills</p>
+            <p><strong>Skills:</strong> @job.Skills</p>
             <p><strong>Description:</strong> @job.Description</p>
-            <small class="text-muted">Posted on: @job.CreatedOn.ToString("dd MMM yyyy")</small>
         </div>
     </div>
 
-    <!-- Application Form -->
-    <EditForm Model="applicationModel" OnValidSubmit="HandleValidSubmit">
+    <EditForm Model="applicationModel" OnValidSubmit="HandleValidSubmit" FormName="JobApplyForm">
         <DataAnnotationsValidator />
         <ValidationSummary />
 
         <div class="mb-3">
-            <label for="fullName" class="form-label">Full Name</label>
-            <InputText id="fullName" class="form-control" @bind-Value="applicationModel.FullName" />
+            <label class="form-label">Full Name</label>
+            <InputText class="form-control" @bind-Value="applicationModel.FullName" />
         </div>
 
         <div class="mb-3">
-            <label for="email" class="form-label">Email</label>
-            <InputText id="email" class="form-control" @bind-Value="applicationModel.Email" type="email" />
+            <label class="form-label">Email</label>
+            <InputText class="form-control" type="email" @bind-Value="applicationModel.Email" />
         </div>
 
         <div class="mb-3">
-            <label for="cvFile" class="form-label">Upload CV (PDF)</label>
-            <InputFile OnChange="HandleFileSelected" accept=".pdf" />
+            <label class="form-label">Upload CV (PDF)</label>
+            <InputFile OnChange="OnInputFileChange" accept=".pdf" class="form-control" />
             @if (!string.IsNullOrEmpty(selectedFileName))
             {
-                <p class="mt-1 text-muted">Selected file: @selectedFileName</p>
+                <p class="mt-1 text-success">✓ Selected file: @selectedFileName</p>
+            }
+            @if (string.IsNullOrEmpty(selectedFileName) && !string.IsNullOrEmpty(statusMessage))
+            {
+                <p class="mt-1 text-danger">⚠ No file selected</p>
             }
         </div>
 
         <button type="submit" class="btn btn-primary">Submit Application</button>
     </EditForm>
+
+
 }
 
 @code {
     [Parameter] public Guid JobId { get; set; }
 
     private JobDto job;
-    private ApplicationModel applicationModel = new();
     private IBrowserFile selectedFile;
     private string selectedFileName;
     private string statusMessage;
+    private ApplicationModel applicationModel = new();
+
+    private string cvSavePath;
 
     protected override async Task OnInitializedAsync()
     {
@@ -77,57 +82,92 @@ else
             job = jobs.FirstOrDefault(j => j.Id == JobId);
 
             if (job == null)
-            {
                 statusMessage = "Job not found.";
-            }
         }
         catch (Exception ex)
         {
             statusMessage = $"Error loading job: {ex.Message}";
         }
     }
-
-    private void HandleFileSelected(InputFileChangeEventArgs e)
+    private void OnInputFileChange(InputFileChangeEventArgs e)
     {
         selectedFile = e.File;
-        selectedFileName = selectedFile.Name;
+        selectedFileName = selectedFile?.Name;
+        statusMessage = ""; // Clear previous messages
+    
+        Console.WriteLine($"File selected: {selectedFileName}"); // Debug
+        StateHasChanged(); // Force UI update
     }
 
-    private async Task HandleValidSubmit()
+private async Task HandleValidSubmit()
+{
+    // Clear previous status
+    statusMessage = "";
+    
+    // Validate file
+    if (selectedFile == null)
     {
-        if (selectedFile == null)
-        {
-            statusMessage = "Please upload your CV.";
-            return;
-        }
+        statusMessage = "⚠ Please upload your CV (PDF file).";
+        StateHasChanged();
+        return;
+    }
 
-        try
-        {
-            var content = new MultipartFormDataContent();
-            var streamContent = new StreamContent(selectedFile.OpenReadStream(5 * 1024 * 1024)); // max 5MB
-            content.Add(streamContent, "cvFile", selectedFile.Name);
-            content.Add(new StringContent(applicationModel.FullName), "FullName");
-            content.Add(new StringContent(applicationModel.Email), "Email");
-            content.Add(new StringContent(JobId.ToString()), "JobId");
+    // Validate file type
+    if (!selectedFile.Name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+    {
+        statusMessage = "⚠ Only PDF files are allowed.";
+        StateHasChanged();
+        return;
+    }
 
-            var response = await Http.PostAsync("http://localhost:5142/api/Application/Submit", content);
-            if (response.IsSuccessStatusCode)
-            {
-                statusMessage = "Application submitted successfully!";
-                applicationModel = new ApplicationModel();
-                selectedFile = null;
-                selectedFileName = null;
-            }
-            else
-            {
-                statusMessage = $"Error submitting application: {response.ReasonPhrase}";
-            }
-        }
-        catch (Exception ex)
+    try
+    {
+        statusMessage = "⏳ Uploading...";
+        StateHasChanged();
+
+        using var content = new MultipartFormDataContent();
+        
+        // Open stream with max size
+        var stream = selectedFile.OpenReadStream(maxAllowedSize: 20 * 1024 * 1024);
+        var streamContent = new StreamContent(stream);
+        streamContent.Headers.ContentType = 
+            new System.Net.Http.Headers.MediaTypeHeaderValue("application/pdf");
+        
+        content.Add(streamContent, "cvFile", selectedFile.Name);
+        content.Add(new StringContent(applicationModel.FullName ?? ""), "FullName");
+        content.Add(new StringContent(applicationModel.Email ?? ""), "Email");
+        content.Add(new StringContent(JobId.ToString()), "JobId"); // Use actual JobId
+        content.Add(new StringContent(Guid.NewGuid().ToString()), "UserId");
+
+        var response = await Http.PostAsync(
+            "http://localhost:5142/api/Request/UploadCv", 
+            content
+        );
+
+        if (response.IsSuccessStatusCode)
         {
-            statusMessage = $"Error: {ex.Message}";
+            statusMessage = "✅ Application submitted successfully!";
+            // Reset form
+            selectedFile = null;
+            selectedFileName = null;
+            applicationModel = new();
+        }
+        else
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            statusMessage = $"⚠ Error: {response.ReasonPhrase} - {errorContent}";
         }
     }
+    catch (Exception ex)
+    {
+        statusMessage = $"❌ Error: {ex.Message}";
+        Console.WriteLine($"Full exception: {ex}");
+    }
+    finally
+    {
+        StateHasChanged();
+    }
+}
 
     public class ApplicationModel
     {

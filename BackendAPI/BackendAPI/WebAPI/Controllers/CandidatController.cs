@@ -1,10 +1,9 @@
-using JobAPI.Domain.Entites;
-using JobAPI.Infrastructure.Data;
+using BackendAPI.Domain.Entites;
 using Microsoft.AspNetCore.Mvc;
 using Shared.DTOs;
 using UserRole = Shared.DTOs.UserRole;
 
-namespace JobBoard_API.WebApi.Controllers;
+namespace BackendAPI.WebApi.Controllers;
 
 [Route("api/[controller]")]
 [ApiController]

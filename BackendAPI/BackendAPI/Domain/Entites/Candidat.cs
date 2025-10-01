@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace JobAPI.Domain.Entites;
+namespace BackendAPI.Domain.Entites;
 
 public class Candidat : User
 {
