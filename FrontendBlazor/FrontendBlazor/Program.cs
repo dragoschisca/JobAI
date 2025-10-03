@@ -1,10 +1,12 @@
 using System.Net.Http;
+using Blazored.LocalStorage;
 using FrontendBlazor.Components;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 👇 Adaugă HttpClient pentru Blazor Server
 builder.Services.AddHttpClient();
+
+builder.Services.AddBlazoredLocalStorage();
 
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();

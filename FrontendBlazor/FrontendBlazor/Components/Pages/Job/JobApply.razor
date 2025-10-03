@@ -93,29 +93,29 @@ else
     {
         selectedFile = e.File;
         selectedFileName = selectedFile?.Name;
-        statusMessage = ""; // Clear previous messages
+        statusMessage = ""; 
     
-        Console.WriteLine($"File selected: {selectedFileName}"); // Debug
-        StateHasChanged(); // Force UI update
+        Console.WriteLine($"File selected: {selectedFileName}"); 
+        StateHasChanged(); 
     }
 
 private async Task HandleValidSubmit()
 {
-    // Clear previous status
     statusMessage = "";
-    
-    // Validate file
+    Console.WriteLine("🚀 Start HandleValidSubmit"); // punct 1
+
     if (selectedFile == null)
     {
         statusMessage = "⚠ Please upload your CV (PDF file).";
+        Console.WriteLine("⚠ No file selected"); // punct 2
         StateHasChanged();
         return;
     }
 
-    // Validate file type
     if (!selectedFile.Name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
     {
         statusMessage = "⚠ Only PDF files are allowed.";
+        Console.WriteLine("⚠ Invalid file type"); // punct 3
         StateHasChanged();
         return;
     }
@@ -123,30 +123,29 @@ private async Task HandleValidSubmit()
     try
     {
         statusMessage = "⏳ Uploading...";
+        Console.WriteLine("⏳ Preparing MultipartFormDataContent"); // punct 4
         StateHasChanged();
 
         using var content = new MultipartFormDataContent();
         
-        // Open stream with max size
         var stream = selectedFile.OpenReadStream(maxAllowedSize: 20 * 1024 * 1024);
         var streamContent = new StreamContent(stream);
         streamContent.Headers.ContentType = 
             new System.Net.Http.Headers.MediaTypeHeaderValue("application/pdf");
         
         content.Add(streamContent, "cvFile", selectedFile.Name);
-        content.Add(new StringContent(applicationModel.FullName ?? ""), "FullName");
-        content.Add(new StringContent(applicationModel.Email ?? ""), "Email");
-        content.Add(new StringContent(JobId.ToString()), "JobId"); // Use actual JobId
-        content.Add(new StringContent(Guid.NewGuid().ToString()), "UserId");
+        content.Add(new StringContent(applicationModel.FullName ?? ""), "fullName");
+        content.Add(new StringContent(applicationModel.Email ?? ""), "email");
+        content.Add(new StringContent(JobId.ToString()), "jobId");
+        content.Add(new StringContent(Guid.NewGuid().ToString()), "userId");
 
-        var response = await Http.PostAsync(
-            "http://localhost:5142/api/Request/UploadCv", 
-            content
-        );
+        Console.WriteLine("📤 Sending POST request to API"); // punct 5
+        var response = await Http.PostAsync("http://localhost:5142/api/Request/UploadCv", content);
 
         if (response.IsSuccessStatusCode)
         {
             statusMessage = "✅ Application submitted successfully!";
+            Console.WriteLine("✅ Success!"); // punct 6
             // Reset form
             selectedFile = null;
             selectedFileName = null;
@@ -156,18 +155,21 @@ private async Task HandleValidSubmit()
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             statusMessage = $"⚠ Error: {response.ReasonPhrase} - {errorContent}";
+            Console.WriteLine($"⚠ API Error: {response.ReasonPhrase} - {errorContent}"); // punct 7
         }
     }
     catch (Exception ex)
     {
         statusMessage = $"❌ Error: {ex.Message}";
-        Console.WriteLine($"Full exception: {ex}");
+        Console.WriteLine($"❌ Exception: {ex}"); // punct 8
     }
     finally
     {
+        Console.WriteLine("🏁 End HandleValidSubmit"); // punct 9
         StateHasChanged();
     }
 }
+
 
     public class ApplicationModel
     {

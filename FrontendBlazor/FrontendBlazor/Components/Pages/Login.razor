@@ -1,0 +1,93 @@
+@page "/login"
+@inject HttpClient Http
+@inject NavigationManager Nav
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+
+<h3>Login</h3>
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert alert-info">@message</div>
+}
+
+<EditForm Model="loginModel" OnValidSubmit="HandleLogin" autocomplete="off" FormName="LoginForm">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label>Email</label>
+        <InputText class="form-control" @bind-Value="loginModel.Email" />
+    </div>
+
+    <div class="mb-3">
+        <label>Password</label>
+        <InputText type="password" class="form-control" @bind-Value="loginModel.Password" />
+    </div>
+
+    <button class="btn btn-primary" type="submit">Login</button>
+</EditForm>
+
+@code {
+    private LoginRequest loginModel = new();
+    private string message;
+
+    private async Task HandleLogin()
+    {
+        try
+        {
+            message = "Step 1: Sending login request...";
+            StateHasChanged();
+
+            var response = await Http.PostAsJsonAsync("http://localhost:5142/api/Auth/login", loginModel);
+
+            message = $"Step 2: Response received. Status code: {response.StatusCode}";
+            StateHasChanged();
+
+            if (response.IsSuccessStatusCode)
+            {
+                message = "Step 3: Parsing response...";
+                StateHasChanged();
+
+                var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+
+                message = $"Step 4: Token received: {result.Token.Substring(0, 10)}...";
+                StateHasChanged();
+
+                await LocalStorage.SetItemAsync("authToken", result.Token);
+
+                Http.DefaultRequestHeaders.Authorization =
+                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", result.Token);
+
+                message = "Step 5: Login successful! Redirecting...";
+                StateHasChanged();
+
+                await Task.Delay(1000);
+
+                // Redirect către pagina ShowJobs după login
+                Nav.NavigateTo("/ShowJobs", forceLoad: true);
+            }
+            else
+            {
+                message = "Step 6: Invalid email or password!";
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            message = $"Step 7: Error: {ex.Message}";
+            StateHasChanged();
+        }
+    }
+
+    public class LoginRequest
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+    }
+
+    public class LoginResponse
+    {
+        public string Token { get; set; }
+        public DateTime Expiration { get; set; }
+    }
+}

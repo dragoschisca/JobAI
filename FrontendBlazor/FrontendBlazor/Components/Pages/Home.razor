@@ -1,13 +1,32 @@
-﻿@page "/"
+﻿@page "/home"
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+@inject NavigationManager Nav
 
-<PageTitle>JobAI - Home</PageTitle>
+<h3>Home</h3>
 
-<div class="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-10">
-    <!-- Hero Section -->
-    <section class="text-center max-w-2xl">
-        <h1 class="text-4xl font-bold text-gray-800 mb-4">
-            Găsește jobul potrivit cu <span class="text-blue-600">JobAI</span>
-        </h1>
-    </section>
-    
-</div>
+@if (!isLoggedIn)
+{
+    <p class="text-danger">You are not authorized! Redirecting to login...</p>
+}
+else
+{
+    <p>Welcome! You are logged in.</p>
+}
+
+@code {
+    private bool isLoggedIn;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await LocalStorage.GetItemAsync<string>("authToken");
+        if (string.IsNullOrEmpty(token))
+        {
+            isLoggedIn = false;
+            Nav.NavigateTo("/login");
+        }
+        else
+        {
+            isLoggedIn = true;
+        }
+    }
+}
