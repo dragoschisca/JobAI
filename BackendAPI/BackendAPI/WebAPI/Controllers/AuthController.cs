@@ -2,7 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using BackendAPI.Domain.Entites;
-using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -22,49 +22,47 @@ public class AuthController : ControllerBase
         _config = config;
     }
 
-    [HttpPost("login")]
+    [HttpPost("Login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        Console.WriteLine("Step 1: Received login request");
+        // Afișează ce vine în request
+        Console.WriteLine("=== LOGIN REQUEST ===");
+        Console.WriteLine("Email: " + request.Email);
+        Console.WriteLine("Password: " + request.Password);
 
-        var user = await _db.Users
-            .FirstOrDefaultAsync(u => u.Email == request.Email && u.Password == request.Password);
+        // Verifică dacă user există în baza de date
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
 
         if (user == null)
         {
-            Console.WriteLine("Step 2: User not found");
-            return Unauthorized();
+            Console.WriteLine("User not found in database!");
+            return Unauthorized("Email sau parolă greșită.");
+        }
+    
+        Console.WriteLine("User found: " + user.Email);
+
+        // Verifică parola
+        if (user.Password != request.Password)
+        {
+            Console.WriteLine("Password mismatch!");
+            return Unauthorized("Email sau parolă greșită.");
         }
 
-        Console.WriteLine($"Step 3: User found: {user.Email}");
+        Console.WriteLine("Login successful!");
 
-        var authClaims = new List<Claim>
-        {
-            new Claim(ClaimTypes.Name, user.Email),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-        };
-
-        Console.WriteLine("Step 4: Claims created");
-
-        var authSigningKey = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
-
-        var token = new JwtSecurityToken(
-            issuer: _config["Jwt:Issuer"],
-            audience: _config["Jwt:Audience"],
-            expires: DateTime.Now.AddHours(3),
-            claims: authClaims,
-            signingCredentials: new SigningCredentials(authSigningKey, SecurityAlgorithms.HmacSha256)
-        );
-
-        Console.WriteLine("Step 5: JWT token created");
-
+        // Returnează date pentru frontend
         return Ok(new
         {
-            Token = new JwtSecurityTokenHandler().WriteToken(token),
-            Expiration = token.ValidTo
+            Message = "Login reușit!",
+            Name = user.Email
         });
-
     }
 
+    // --- DTO classes ---
+    public class LoginRequest
+    {
+        public string Email { get; set; }
+        public string Password { get; set; }
+    }
+    
 }
