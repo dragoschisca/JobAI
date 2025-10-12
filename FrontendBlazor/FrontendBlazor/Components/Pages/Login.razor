@@ -1,93 +1,90 @@
-@page "/login"
+@page "/Login"
+@rendermode InteractiveServer
+@inject NavigationManager navManager
 @inject HttpClient Http
-@inject NavigationManager Nav
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 
-<h3>Login</h3>
+<div class="row justify-content-center">
+    <div class="col-6">
+        <EditForm method="post" FormName="LoginForm" OnValidSubmit="LoginForm" Model="loginDto" autocomplete="off">
+            <h3>Login</h3>
+            <div class="mb-3">
+                <label for="Email" class="form-label">
+                    Email
+                </label>
+                <InputText id="Email" @bind-Value="loginDto.Email" class="form-control border-dark"/>
+            </div>
+            <div class="mb-3">
+                <label for="Password" class="form-label">
+                    Password
+                </label>
+                <InputText id="Password" @bind-Value="loginDto.Password" type="password" class="form-control border-dark"/>
+            </div>
+            <div class="mb-3">
+                <button class="btn btn-primary shadow-none">
+                    Login
+                </button>
+            </div>
+            @if (!string.IsNullOrEmpty(ErrorMessage))
+            {
+                <div class="alert alert-danger">
+                    @ErrorMessage
+                </div>
+            }
+            <DataAnnotationsValidator/>
+            <ValidationSummary/>
+        </EditForm>
+    </div>
+</div>
 
-@if (!string.IsNullOrEmpty(message))
+@code
 {
-    <div class="alert alert-info">@message</div>
-}
+    [SupplyParameterFromForm]
+    public LoginDto loginDto { get; set; } = new();
 
-<EditForm Model="loginModel" OnValidSubmit="HandleLogin" autocomplete="off" FormName="LoginForm">
-    <DataAnnotationsValidator />
-    <ValidationSummary />
+    public string ErrorMessage { get; set; } = string.Empty;
 
-    <div class="mb-3">
-        <label>Email</label>
-        <InputText class="form-control" @bind-Value="loginModel.Email" />
-    </div>
-
-    <div class="mb-3">
-        <label>Password</label>
-        <InputText type="password" class="form-control" @bind-Value="loginModel.Password" />
-    </div>
-
-    <button class="btn btn-primary" type="submit">Login</button>
-</EditForm>
-
-@code {
-    private LoginRequest loginModel = new();
-    private string message;
-
-    private async Task HandleLogin()
+    protected async Task LoginForm()
     {
+        ErrorMessage = string.Empty;
+        
         try
         {
-            message = "Step 1: Sending login request...";
-            StateHasChanged();
-
-            var response = await Http.PostAsJsonAsync("http://localhost:5142/api/Auth/login", loginModel);
-
-            message = $"Step 2: Response received. Status code: {response.StatusCode}";
-            StateHasChanged();
+            var response = await Http.PostAsJsonAsync("http://localhost:5142/api/Auth/Login", loginDto);
 
             if (response.IsSuccessStatusCode)
             {
-                message = "Step 3: Parsing response...";
-                StateHasChanged();
-
                 var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
-
-                message = $"Step 4: Token received: {result.Token.Substring(0, 10)}...";
-                StateHasChanged();
-
-                await LocalStorage.SetItemAsync("authToken", result.Token);
-
-                Http.DefaultRequestHeaders.Authorization =
-                    new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", result.Token);
-
-                message = "Step 5: Login successful! Redirecting...";
-                StateHasChanged();
-
-                await Task.Delay(1000);
-
-                // Redirect către pagina ShowJobs după login
-                Nav.NavigateTo("/ShowJobs", forceLoad: true);
+                
+                // Salvează în LocalStorage
+                await LocalStorage.SetItemAsync("userEmail", result.Name);
+                await LocalStorage.SetItemAsync("isLoggedIn", true);
+                
+                navManager.NavigateTo("/ShowJobs", forceLoad: true);
             }
             else
             {
-                message = "Step 6: Invalid email or password!";
-                StateHasChanged();
+                var strResponse = await response.Content.ReadAsStringAsync();
+                Console.WriteLine("Login failed: " + strResponse);
+                ErrorMessage = "Email sau parolă greșită.";
             }
         }
         catch (Exception ex)
         {
-            message = $"Step 7: Error: {ex.Message}";
-            StateHasChanged();
+            ErrorMessage = $"Eroare: {ex.Message}";
+            Console.WriteLine($"Exception: {ex}");
         }
     }
 
-    public class LoginRequest
+    public class LoginDto
     {
-        public string Email { get; set; }
-        public string Password { get; set; }
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
     }
-
+    
     public class LoginResponse
     {
-        public string Token { get; set; }
-        public DateTime Expiration { get; set; }
+        public string Message { get; set; }
+        public string Name { get; set; }
     }
 }
