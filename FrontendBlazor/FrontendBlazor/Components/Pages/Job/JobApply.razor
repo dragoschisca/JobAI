@@ -2,6 +2,8 @@
 @inject HttpClient Http
 @using Shared.DTOs
 @rendermode InteractiveServer
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+
 
 <h3>Apply for Job</h3>
 
@@ -36,17 +38,17 @@ else
 
         <div class="mb-3">
             <label class="form-label">Full Name</label>
-            <InputText class="form-control" @bind-Value="applicationModel.FullName" />
+            <InputText class="form-control border-dark" @bind-Value="applicationModel.FullName" />
         </div>
 
         <div class="mb-3">
             <label class="form-label">Email</label>
-            <InputText class="form-control" type="email" @bind-Value="applicationModel.Email" />
+            <InputText class="form-control border-dark" type="email" @bind-Value="applicationModel.Email" />
         </div>
 
         <div class="mb-3">
             <label class="form-label">Upload CV (PDF)</label>
-            <InputFile OnChange="OnInputFileChange" accept=".pdf" class="form-control" />
+            <InputFile OnChange="OnInputFileChange" accept=".pdf" class="form-control border-dark" />
             @if (!string.IsNullOrEmpty(selectedFileName))
             {
                 <p class="mt-1 text-success">✓ Selected file: @selectedFileName</p>
@@ -73,16 +75,24 @@ else
     private ApplicationModel applicationModel = new();
 
     private string cvSavePath;
+    private string userEmail = "";
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             var jobs = await Http.GetFromJsonAsync<List<JobDto>>("http://localhost:5142/api/Job");
+            
             job = jobs.FirstOrDefault(j => j.Id == JobId);
 
             if (job == null)
                 statusMessage = "Job not found.";
+            
+            if (await LocalStorage.ContainKeyAsync("isLoggedIn"))
+            {
+                userEmail = await LocalStorage.GetItemAsync<string>("userEmail");
+                applicationModel.Email = userEmail;
+            }
         }
         catch (Exception ex)
         {

@@ -1,0 +1,27 @@
+@page "/ShowProfile/{UserId:guid}"
+@inject HttpClient Http
+@using Shared.DTOs
+
+<h3>ShowProfile</h3>
+
+@code {
+    [Parameter]
+    protected Guid UserId { get; set; }
+    protected CandidatDto user;
+    protected string statusMessage;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        user = await Http.GetFromJsonAsync<CandidatDto>($"http://localhost:5142/api/Candidat/GetCandidatById/{UserId}");
+
+        if (user != null)
+        {
+            statusMessage = "Profile loaded succesfully!";
+        }
+        else
+        {
+            statusMessage = "Fail to load user data!";
+        }
+    }
+}

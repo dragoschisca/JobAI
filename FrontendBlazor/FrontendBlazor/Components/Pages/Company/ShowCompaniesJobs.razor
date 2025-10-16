@@ -1,0 +1,76 @@
+@page "/ShowCompaniesJobs/{CompanyId:guid}"
+@inject HttpClient Http
+@using Shared.DTOs
+
+<h3 class="mb-4">@CompanyName Jobs</h3>
+
+@if (!string.IsNullOrEmpty(statusMessage))
+{
+    <div class="alert alert-info">@statusMessage</div>
+}
+
+@if (companyJobs == null)
+{
+    <div class="text-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+}
+else if (!companyJobs.Any())
+{
+    <p class="text-muted">No companies found.</p>
+}
+else
+{
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        @foreach (var job in companyJobs)
+        {
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">@job.Title</h5>
+                        <h6 class="card-subtitle mb-2 text-muted">@job.Category | @job.WorkTime</h6>
+                        
+                        @if (job.IsSalaryMentionated)
+                        {
+                            <p class="card-text"><strong>Salary:</strong> @job.Salary</p>
+                        }
+                    </div>
+                    <div class="card-footer text-end">
+                        <a href="/JobApply/@job.Id" class="btn btn-primary btn-sm">Apply</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public Guid CompanyId { get; set; }
+    protected string CompanyName;
+    protected List<JobDto> companyJobs;
+    protected string statusMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            companyJobs = await Http.GetFromJsonAsync<List<JobDto>>($"http://localhost:5142/api/Company/GetCompanyJobsById/{CompanyId}");
+            
+            if (companyJobs != null && companyJobs.Any())
+            {
+                statusMessage = "Jobs loaded successfully!";
+            }
+            else
+            {
+                statusMessage = "No companies found.";
+            }
+        }
+        catch(Exception ex)
+        {
+            statusMessage = $"Error loading jobs: {ex.Message}";
+        }
+    }
+}

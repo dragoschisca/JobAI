@@ -1,32 +1,40 @@
-﻿@page "/home"
+﻿@page "/Home"
+@rendermode InteractiveServer
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
-@inject NavigationManager Nav
+@inject NavigationManager navManager
 
-<h3>Home</h3>
-
-@if (!isLoggedIn)
-{
-    <p class="text-danger">You are not authorized! Redirecting to login...</p>
-}
-else
-{
-    <p>Welcome! You are logged in.</p>
-}
+<h3>Bine ai venit!</h3>
 
 @code {
-    private bool isLoggedIn;
+    private bool isLoaded = false;
+    private bool isLoggedIn = false;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        var token = await LocalStorage.GetItemAsync<string>("authToken");
-        if (string.IsNullOrEmpty(token))
+        if (firstRender)
         {
-            isLoggedIn = false;
-            Nav.NavigateTo("/login");
+            try
+            {
+                if (await LocalStorage.ContainKeyAsync("isLoggedIn"))
+                {
+                    isLoggedIn = await LocalStorage.GetItemAsync<bool>("isLoggedIn");
+                }
+
+                isLoaded = true;
+                StateHasChanged();
+            }
+            catch (InvalidOperationException)
+            {
+                Console.WriteLine("LocalStorage indisponibil înainte de hidratare.");
+            }
         }
-        else
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (isLoaded && !isLoggedIn)
         {
-            isLoggedIn = true;
+            navManager.NavigateTo("/Login", forceLoad: true);
         }
     }
 }

@@ -56,11 +56,10 @@
             {
                 var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
                 
-                // Salvează în LocalStorage
-                await LocalStorage.SetItemAsync("userEmail", result.Name);
+                await LocalStorage.SetItemAsync("userId", result.Id.ToString());
                 await LocalStorage.SetItemAsync("isLoggedIn", true);
                 
-                navManager.NavigateTo("/ShowJobs", forceLoad: true);
+                navManager.NavigateTo("/Home", forceLoad: true);
             }
             else
             {
@@ -85,6 +84,6 @@
     public class LoginResponse
     {
         public string Message { get; set; }
-        public string Name { get; set; }
+        public Guid Id { get; set; }
     }
 }

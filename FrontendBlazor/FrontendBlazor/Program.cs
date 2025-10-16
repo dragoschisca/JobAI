@@ -23,7 +23,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
 
-app.MapGet("/", () => Results.Redirect("/login"));
+app.MapGet("/", () => Results.Redirect("/Home"));
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();

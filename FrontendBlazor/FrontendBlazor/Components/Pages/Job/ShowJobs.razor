@@ -8,11 +8,11 @@
 <div class="d-flex justify-content-between align-items-center p-3 bg-light border-bottom shadow-sm">
     <h3 class="m-0">Lista Joburilor</h3>
 
-    @if (!string.IsNullOrEmpty(userEmail))
+    @if (userId != null)
     {
         <div class="d-flex align-items-center">
             <div class="text-muted me-2">
-                👤 Logat ca: <strong>@userEmail</strong>
+                👤 Logat ca: <strong>@userId</strong>
             </div>
             <button class="btn btn-outline-danger btn-sm" @onclick="Logout">Logout</button>
         </div>
@@ -69,7 +69,7 @@ else
     private List<JobDto> jobs;
     private List<CompanyDto> companies;
     private string statusMessage;
-    private string userEmail;
+    private string userId;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -77,7 +77,7 @@ else
         {
             try
             {
-                userEmail = await LocalStorage.GetItemAsync<string>("userEmail");
+                userId = await LocalStorage.GetItemAsync<string>("userId");
                 jobs = await Http.GetFromJsonAsync<List<JobDto>>("http://localhost:5142/api/Job");
                 companies = await Http.GetFromJsonAsync<List<CompanyDto>>("http://localhost:5142/api/Company");
                 
@@ -88,7 +88,7 @@ else
             catch (Exception ex)
             {
                 statusMessage = $"Error loading jobs: {ex.Message}";
-                jobs = new List<JobDto>(); // Previne loading infinit
+                jobs = new List<JobDto>();
             }
             
             StateHasChanged();
@@ -98,7 +98,7 @@ else
     private async Task Logout()
     {
         await LocalStorage.RemoveItemAsync("isLoggedIn");
-        await LocalStorage.RemoveItemAsync("userEmail");
+        await LocalStorage.RemoveItemAsync("userId");
         Nav.NavigateTo("/login", forceLoad: true);
     }
 }
