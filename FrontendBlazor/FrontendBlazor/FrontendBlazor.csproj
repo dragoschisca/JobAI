@@ -9,6 +9,10 @@
       <PackageReference Include="Blazored.SessionStorage" Version="2.4.0" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Include="wwwroot\CSS\Home.css" />
+    </ItemGroup>
+
     <PropertyGroup>
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>

@@ -33,29 +33,29 @@
                 <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Login
             </NavLink>
         </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="/ShowProfile/" Match="NavLinkMatch.All">
-                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Login
-            </NavLink>
-        </div>
+        @if (isLoggedIn)
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href=@($"/ShowProfile/{userId}") Match="NavLinkMatch.All">
+                    <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Show profile
+                </NavLink>
+            </div>
+        }
     </nav>
 </div>
 
-@code
-{
-    private Guid userId;
+@code{
+
+    public bool isLoggedIn;
+    public string userId;
 
     protected override async Task OnInitializedAsync()
     {
-        var idString = await LocalStorage.GetItemAsync<string>("userId");
+        //xisLoggedIn = await LocalStorage.GetItemAsync<bool>("isLoggedIn");
 
-        if (Guid.TryParse(idString, out Guid parsedId))
+        if (isLoggedIn)
         {
-            userId = parsedId;
-        }
-        else
-        {
-            userId = Guid.Empty; // sau redirecționează spre login
+            userId = await LocalStorage.GetItemAsync<string>("userId");
         }
     }
 }

@@ -57,6 +57,7 @@
                 var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
                 
                 await LocalStorage.SetItemAsync("userId", result.Id.ToString());
+                await LocalStorage.SetItemAsync("userEmail", loginDto.Email);
                 await LocalStorage.SetItemAsync("isLoggedIn", true);
                 
                 navManager.NavigateTo("/Home", forceLoad: true);

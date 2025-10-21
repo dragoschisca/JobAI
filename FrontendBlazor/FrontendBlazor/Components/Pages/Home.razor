@@ -2,12 +2,208 @@
 @rendermode InteractiveServer
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @inject NavigationManager navManager
+@inject HttpClient Http
+@using Shared.DTOs
 
-<h3>Bine ai venit!</h3>
+<head>
+    <link href="CSS/Home.css" rel="stylesheet" />
+</head>
+
+<div class="home-container">
+    @if (!isLoaded)
+    {
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>Se încarcă...</p>
+        </div>
+    }
+    else
+    {
+        <!-- Hero Section -->
+        <section class="hero-section">
+            <div class="hero-content">
+                <h1>Găsește jobul perfect pentru tine</h1>
+                <p class="hero-subtitle">Peste @totalJobs locuri de muncă disponibile în Moldova</p>
+                
+                <div class="search-box">
+                    <input type="text" @bind="searchQuery" placeholder="Caută job după titlu, companie..." class="search-input" />
+                    <select @bind="selectedCategory" class="category-select">
+                        <option value="">Toate categoriile</option>
+                        @foreach (var category in categories)
+                        {
+                            <option value="@category">@category</option>
+                        }
+                    </select>
+                    <button @onclick="SearchJobs" class="search-btn">Caută</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Statistics Section -->
+        <section class="stats-section">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number">@totalJobs</div>
+                    <div class="stat-label">Locuri de muncă</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">@totalCompanies</div>
+                    <div class="stat-label">Companii</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">@averageSalary MDL</div>
+                    <div class="stat-label">Salariu mediu</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number">@newJobsToday</div>
+                    <div class="stat-label">Joburi noi astăzi</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Categories Section -->
+        <section class="categories-section">
+            <h2>Caută după categorie</h2>
+            <div class="categories-grid">
+                @foreach (var cat in categoryStats)
+                {
+                    <div class="category-card" @onclick="() => FilterByCategory(cat.Key)">
+                        <div class="category-icon">@GetCategoryIcon(cat.Key)</div>
+                        <h3>@cat.Key</h3>
+                        <p>@cat.Value joburi disponibile</p>
+                    </div>
+                }
+            </div>
+        </section>
+
+        <!-- Recent Jobs Section -->
+        <section class="jobs-section">
+            <div class="section-header">
+                <h2>Joburi recente</h2>
+                <div class="filter-buttons">
+                    <button class="filter-btn @(filterType == "all" ? "active" : "")" @onclick='() => SetFilter("all")'>Toate</button>
+                    <button class="filter-btn @(filterType == "with-salary" ? "active" : "")" @onclick='() => SetFilter("with-salary")'>Cu salariu</button>
+                    <button class="filter-btn @(filterType == "remote" ? "active" : "")" @onclick='() => SetFilter("remote")'>Remote</button>
+                </div>
+            </div>
+
+            <div class="jobs-grid">
+                @if (filteredJobs.Any())
+                {
+                    @foreach (var job in filteredJobs.Take(12))
+                    {
+                        <div class="job-card" @onclick="() => ViewJobDetails(job.Id)">
+                            <div class="job-header">
+                                <h3>@job.Title</h3>
+                                @if (IsNewJob(job.CreatedOn))
+                                {
+                                    <span class="badge badge-new">NOU</span>
+                                }
+                            </div>
+                            <p class="company-name">@GetCompanyName(job.CompanyId)</p>
+                            
+                            <div class="job-details">
+                                <span class="detail-item">
+                                    <span class="icon">📍</span>
+                                    @job.Location
+                                </span>
+                                <span class="detail-item">
+                                    <span class="icon">⏰</span>
+                                    @job.WorkTime
+                                </span>
+                                <span class="detail-item">
+                                    <span class="icon">💼</span>
+                                    @job.Experience
+                                </span>
+                            </div>
+
+                            @if (job.IsSalaryMentionated && job.Salary > 0)
+                            {
+                                <div class="job-salary">
+                                    <span class="icon">💰</span>
+                                    @job.Salary. MDL
+                                </div>
+                            }
+
+                            <div class="job-skills">
+                                @foreach (var skill in job.Skills?.Split(',').Take(3) ?? new string[] { })
+                                {
+                                    <span class="skill-tag">@skill.Trim()</span>
+                                }
+                            </div>
+
+                            <div class="job-footer">
+                                <span class="job-category">@job.Category</span>
+                                <span class="job-date">@GetRelativeTime(job.CreatedOn)</span>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="no-results">
+                        <p>Nu au fost găsite joburi</p>
+                    </div>
+                }
+            </div>
+
+            @if (filteredJobs.Count > 12)
+            {
+                <div class="load-more">
+                    <button class="load-more-btn" @onclick="LoadMoreJobs">Încarcă mai multe joburi</button>
+                </div>
+            }
+        </section>
+
+        <!-- Salary Insights Section -->
+        <section class="salary-section">
+            <h2>Statistici salariale pe categorii</h2>
+            <div class="salary-grid">
+                @foreach (var salaryInfo in salaryByCategory)
+                {
+                    <div class="salary-card">
+                        <h3>@salaryInfo.Key</h3>
+                        <div class="salary-range">
+                            <div class="salary-item">
+                                <span class="label">Minim</span>
+                                <span class="value">@salaryInfo.Value.Min.ToString("N0") MDL</span>
+                            </div>
+                            <div class="salary-item">
+                                <span class="label">Mediu</span>
+                                <span class="value highlight">@salaryInfo.Value.Avg.ToString("N0") MDL</span>
+                            </div>
+                            <div class="salary-item">
+                                <span class="label">Maxim</span>
+                                <span class="value">@salaryInfo.Value.Max.ToString("N0") MDL</span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </section>
+    }
+</div>
 
 @code {
     private bool isLoaded = false;
     private bool isLoggedIn = false;
+    private List<JobDto> allJobs = new();
+    private List<JobDto> filteredJobs = new();
+    private string searchQuery = "";
+    private string selectedCategory = "";
+    private string filterType = "all";
+    private int displayCount = 12;
+
+    // Statistics
+    private int totalJobs = 0;
+    private int totalCompanies = 0;
+    private int averageSalary = 0;
+    private int newJobsToday = 0;
+
+    // Categories
+    private List<string> categories = new();
+    private Dictionary<string, int> categoryStats = new();
+    private Dictionary<string, SalaryInfo> salaryByCategory = new();
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -20,12 +216,17 @@
                     isLoggedIn = await LocalStorage.GetItemAsync<bool>("isLoggedIn");
                 }
 
+                if (isLoggedIn)
+                {
+                    await LoadJobs();
+                }
+
                 isLoaded = true;
                 StateHasChanged();
             }
-            catch (InvalidOperationException)
+            catch (Exception ex)
             {
-                Console.WriteLine("LocalStorage indisponibil înainte de hidratare.");
+                Console.WriteLine($"Eroare: {ex.Message}");
             }
         }
     }
@@ -36,5 +237,160 @@
         {
             navManager.NavigateTo("/Login", forceLoad: true);
         }
+    }
+
+    private async Task LoadJobs()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<List<JobDto>>("http://localhost:5142/api/Job");
+            if (response != null)
+            {
+                allJobs = response;
+                filteredJobs = allJobs;
+                CalculateStatistics();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Eroare la încărcarea joburilor: {ex.Message}");
+        }
+    }
+
+    private void CalculateStatistics()
+    {
+        totalJobs = allJobs.Count;
+        totalCompanies = allJobs.Select(j => j.CompanyId).Distinct().Count();
+        
+        var jobsWithSalary = allJobs.Where(j => j.IsSalaryMentionated && j.Salary > 0).ToList();
+        averageSalary = jobsWithSalary.Any() ? (int)jobsWithSalary.Average(j => j.Salary) : 0;
+        
+        newJobsToday = allJobs.Count(j => j.CreatedOn.Date == DateTime.Today);
+
+        // Categories
+        categories = allJobs.Select(j => j.Category).Distinct().OrderBy(c => c).ToList();
+        categoryStats = allJobs.GroupBy(j => j.Category)
+            .ToDictionary(g => g.Key, g => g.Count());
+
+        // Salary by category
+        salaryByCategory = allJobs
+            .Where(j => j.IsSalaryMentionated && j.Salary > 0)
+            .GroupBy(j => j.Category)
+            .ToDictionary(
+                g => g.Key,
+                g => new SalaryInfo
+                {
+                    Min = (int)g.Min(j => j.Salary),
+                    Avg = (int)g.Average(j => j.Salary),
+                    Max = (int)g.Max(j => j.Salary)
+                }
+            );
+    }
+
+    private void SearchJobs()
+    {
+        filteredJobs = allJobs;
+
+        if (!string.IsNullOrWhiteSpace(searchQuery))
+        {
+            filteredJobs = filteredJobs.Where(j => 
+                j.Title.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                j.Description.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)
+            ).ToList();
+        }
+
+        if (!string.IsNullOrWhiteSpace(selectedCategory))
+        {
+            filteredJobs = filteredJobs.Where(j => j.Category == selectedCategory).ToList();
+        }
+
+        ApplyFilter();
+    }
+
+    private void FilterByCategory(string category)
+    {
+        selectedCategory = category;
+        SearchJobs();
+    }
+
+    private void SetFilter(string type)
+    {
+        filterType = type;
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        var jobs = string.IsNullOrWhiteSpace(searchQuery) && string.IsNullOrWhiteSpace(selectedCategory) 
+            ? allJobs 
+            : filteredJobs;
+
+        filteredJobs = filterType switch
+        {
+            "with-salary" => jobs.Where(j => j.IsSalaryMentionated && j.Salary > 0).ToList(),
+            "remote" => jobs.Where(j => j.Location == Location.Remote).ToList(),
+            _ => jobs.ToList()
+        };
+
+        displayCount = 12;
+        StateHasChanged();
+    }
+
+    private void LoadMoreJobs()
+    {
+        displayCount += 12;
+        StateHasChanged();
+    }
+
+    private void ViewJobDetails(Guid id)
+    {
+        navManager.NavigateTo($"/job/{id}");
+    }
+
+    private string GetCategoryIcon(string category)
+    {
+        return category.ToLower() switch
+        {
+            var c when c.Contains("it") || c.Contains("tehnolog") => "💻",
+            var c when c.Contains("vânzări") || c.Contains("sales") => "📊",
+            var c when c.Contains("marketing") => "📱",
+            var c when c.Contains("financ") => "💰",
+            var c when c.Contains("resurse umane") || c.Contains("hr") => "👥",
+            var c when c.Contains("construcț") => "🏗️",
+            var c when c.Contains("educați") => "📚",
+            var c when c.Contains("sănătate") => "🏥",
+            _ => "💼"
+        };
+    }
+
+    private string GetCompanyName(Guid? companyId)
+    {
+        return companyId.HasValue ? $"Compania #{companyId.Value.ToString().Substring(0, 8)}" : "Companie necunoscută";
+    }
+
+    private bool IsNewJob(DateTime createdAt)
+    {
+        return (DateTime.Now - createdAt).TotalDays <= 3;
+    }
+
+    private string GetRelativeTime(DateTime date)
+    {
+        var timeSpan = DateTime.Now - date;
+        
+        if (timeSpan.TotalMinutes < 60)
+            return $"{(int)timeSpan.TotalMinutes} minute în urmă";
+        if (timeSpan.TotalHours < 24)
+            return $"{(int)timeSpan.TotalHours} ore în urmă";
+        if (timeSpan.TotalDays < 7)
+            return $"{(int)timeSpan.TotalDays} zile în urmă";
+        
+        return date.ToString("dd.MM.yyyy");
+    }
+    
+    public class SalaryInfo
+    {
+        public int Min { get; set; }
+        public int Avg { get; set; }
+        public int Max { get; set; }
     }
 }

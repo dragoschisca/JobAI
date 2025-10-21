@@ -76,6 +76,7 @@ else
 
     private string cvSavePath;
     private string userEmail = "";
+    private string userId = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -91,6 +92,7 @@ else
             if (await LocalStorage.ContainKeyAsync("isLoggedIn"))
             {
                 userEmail = await LocalStorage.GetItemAsync<string>("userEmail");
+                userId = await LocalStorage.GetItemAsync<string>("userId");
                 applicationModel.Email = userEmail;
             }
         }
@@ -112,12 +114,12 @@ else
 private async Task HandleValidSubmit()
 {
     statusMessage = "";
-    Console.WriteLine("🚀 Start HandleValidSubmit"); // punct 1
+    Console.WriteLine("🚀 Start HandleValidSubmit"); 
 
     if (selectedFile == null)
     {
         statusMessage = "⚠ Please upload your CV (PDF file).";
-        Console.WriteLine("⚠ No file selected"); // punct 2
+        Console.WriteLine("⚠ No file selected"); 
         StateHasChanged();
         return;
     }
@@ -125,7 +127,7 @@ private async Task HandleValidSubmit()
     if (!selectedFile.Name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
     {
         statusMessage = "⚠ Only PDF files are allowed.";
-        Console.WriteLine("⚠ Invalid file type"); // punct 3
+        Console.WriteLine("⚠ Invalid file type");
         StateHasChanged();
         return;
     }
@@ -133,7 +135,7 @@ private async Task HandleValidSubmit()
     try
     {
         statusMessage = "⏳ Uploading...";
-        Console.WriteLine("⏳ Preparing MultipartFormDataContent"); // punct 4
+        Console.WriteLine("⏳ Preparing MultipartFormDataContent");
         StateHasChanged();
 
         using var content = new MultipartFormDataContent();
@@ -147,9 +149,9 @@ private async Task HandleValidSubmit()
         content.Add(new StringContent(applicationModel.FullName ?? ""), "fullName");
         content.Add(new StringContent(applicationModel.Email ?? ""), "email");
         content.Add(new StringContent(JobId.ToString()), "jobId");
-        content.Add(new StringContent(Guid.NewGuid().ToString()), "userId");
+        content.Add(new StringContent(userId), "userId");
 
-        Console.WriteLine("📤 Sending POST request to API"); // punct 5
+        Console.WriteLine("📤 Sending POST request to API"); 
         var response = await Http.PostAsync("http://localhost:5142/api/Request/UploadCv", content);
 
         if (response.IsSuccessStatusCode)
@@ -165,17 +167,17 @@ private async Task HandleValidSubmit()
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             statusMessage = $"⚠ Error: {response.ReasonPhrase} - {errorContent}";
-            Console.WriteLine($"⚠ API Error: {response.ReasonPhrase} - {errorContent}"); // punct 7
+            Console.WriteLine($"⚠ API Error: {response.ReasonPhrase} - {errorContent}");
         }
     }
     catch (Exception ex)
     {
-        statusMessage = $"❌ Error: {ex.Message}";
-        Console.WriteLine($"❌ Exception: {ex}"); // punct 8
+        statusMessage = $"Error: {ex.Message}";
+        Console.WriteLine($"Exception: {ex}");
     }
     finally
     {
-        Console.WriteLine("🏁 End HandleValidSubmit"); // punct 9
+        Console.WriteLine("🏁 End HandleValidSubmit");
         StateHasChanged();
     }
 }

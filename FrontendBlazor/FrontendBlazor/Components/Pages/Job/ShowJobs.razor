@@ -5,71 +5,305 @@
 @inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 @using Shared.DTOs
 
-<div class="d-flex justify-content-between align-items-center p-3 bg-light border-bottom shadow-sm">
-    <h3 class="m-0">Lista Joburilor</h3>
+<head>
+    <link href="CSS/ShowJobs.css" rel="stylesheet"/>
+</head>
 
-    @if (userId != null)
-    {
-        <div class="d-flex align-items-center">
-            <div class="text-muted me-2">
-                👤 Logat ca: <strong>@userId</strong>
+<div class="page-container">
+    <!-- Header -->
+    <header class="page-header">
+        <div class="header-content">
+            <div class="header-left">
+                <h1>🔍 Toate joburile</h1>
+                <p class="subtitle">@totalJobs joburi disponibile</p>
             </div>
-            <button class="btn btn-outline-danger btn-sm" @onclick="Logout">Logout</button>
+            
+            @if (userId != null)
+            {
+                <div class="user-section">
+                    <div class="user-info">
+                        <div class="user-avatar">@GetInitials(userId)</div>
+                        <div class="user-details">
+                            <span class="user-label">Logat ca</span>
+                            <span class="user-name">@userId</span>
+                        </div>
+                    </div>
+                    <button class="btn-logout" @onclick="Logout">
+                        <span class="icon">🚪</span> Logout
+                    </button>
+                </div>
+            }
+        </div>
+    </header>
+
+    <!-- Filters & Search Section -->
+    <div class="filters-section">
+        <div class="search-container">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input 
+                    type="text" 
+                    @bind="searchTerm" 
+                    @bind:event="oninput"
+                    @onkeyup="FilterJobs"
+                    placeholder="Caută după titlu, companie, categorie..."
+                    class="search-input" />
+                @if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    <button class="clear-search" @onclick="ClearSearch">✕</button>
+                }
+            </div>
+        </div>
+
+        <div class="filter-controls">
+            <div class="filter-group">
+                <label>Categorie:</label>
+                <select @bind="selectedCategory" @bind:after="FilterJobs" class="filter-select">
+                    <option value="">Toate categoriile</option>
+                    @foreach (var category in categories)
+                    {
+                        <option value="@category">@category</option>
+                    }
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Program:</label>
+                <select @bind="selectedWorkTime" @bind:after="FilterJobs" class="filter-select">
+                    <option value="">Toate</option>
+                    @foreach (var workTime in workTimes)
+                    {
+                        <option value="@workTime">@workTime</option>
+                    }
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Experiență:</label>
+                <select @bind="selectedExperience" @bind:after="FilterJobs" class="filter-select">
+                    <option value="">Toate</option>
+                    @foreach (var exp in experiences)
+                    {
+                        <option value="@exp">@exp</option>
+                    }
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Salariu:</label>
+                <select @bind="salaryFilter" @bind:after="FilterJobs" class="filter-select">
+                    <option value="all">Toate</option>
+                    <option value="with-salary">Cu salariu menționat</option>
+                    <option value="no-salary">Fără salariu</option>
+                </select>
+            </div>
+
+            <button class="btn-reset" @onclick="ResetFilters">
+                <span class="icon">↻</span> Reset filtre
+            </button>
+        </div>
+
+        <div class="sort-controls">
+            <label>Sortare:</label>
+            <div class="sort-buttons">
+                <button class="sort-btn @(sortBy == "date-desc" ? "active" : "")" @onclick='() => SortJobs("date-desc")'>
+                    📅 Cele mai noi
+                </button>
+                <button class="sort-btn @(sortBy == "date-asc" ? "active" : "")" @onclick='() => SortJobs("date-asc")'>
+                    📅 Cele mai vechi
+                </button>
+                <button class="sort-btn @(sortBy == "salary-desc" ? "active" : "")" @onclick='() => SortJobs("salary-desc")'>
+                    💰 Salariu descrescător
+                </button>
+                <button class="sort-btn @(sortBy == "salary-asc" ? "active" : "")" @onclick='() => SortJobs("salary-asc")'>
+                    💰 Salariu crescător
+                </button>
+                <button class="sort-btn @(sortBy == "title" ? "active" : "")" @onclick='() => SortJobs("title")'>
+                    🔤 Alfabetic
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status Messages -->
+    @if (!string.IsNullOrEmpty(statusMessage))
+    {
+        <div class="alert alert-@alertType">
+            <span class="alert-icon">ℹ️</span>
+            @statusMessage
         </div>
     }
-</div>
 
-@if (!string.IsNullOrEmpty(statusMessage))
-{
-    <div class="alert alert-info mt-3">@statusMessage</div>
-}
-
-@if (jobs == null)
-{
-    <div class="text-center mt-5">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-    </div>
-}
-else if (!jobs.Any())
-{
-    <p class="text-muted mt-3">No jobs found.</p>
-}
-else
-{
-    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mt-3">
-        @foreach (var job in jobs)
+    <!-- Content -->
+    <div class="content-section">
+        @if (jobs == null)
         {
-            <div class="col">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-body">
-                        <h5 class="card-title">@job.Title</h5>
-                        <h6 class="card-subtitle mb-2 text-muted">@job.Category | @job.WorkTime</h6>
-                        
-                        @if (job.IsSalaryMentionated)
-                        {
-                            <p class="card-text"><strong>Salary:</strong> @job.Salary</p>
-                        }
-
-                        <p class="card-text"><strong>Company:</strong>
-                            @companies?.FirstOrDefault(c => c.Id == job.CompanyId)?.CompanyName
-                        </p>
-                    </div>
-                    <div class="card-footer text-end">
-                        <a href="/JobApply/@job.Id" class="btn btn-primary btn-sm">Apply</a>
-                    </div>
-                </div>
+            <div class="loading-container">
+                <div class="loading-spinner"></div>
+                <p class="loading-text">Se încarcă joburile...</p>
             </div>
         }
+        else if (!filteredJobs.Any())
+        {
+            <div class="empty-state">
+                <div class="empty-icon">😔</div>
+                <h3>Nu am găsit joburi</h3>
+                <p>Încearcă să modifici criteriile de căutare sau să resetezi filtrele</p>
+                <button class="btn-primary" @onclick="ResetFilters">Reset filtre</button>
+            </div>
+        }
+        else
+        {
+            <div class="results-info">
+                <p>
+                    Afișez <strong>@filteredJobs.Count</strong> din <strong>@totalJobs</strong> joburi
+                    @if (!string.IsNullOrEmpty(searchTerm) || !string.IsNullOrEmpty(selectedCategory))
+                    {
+                        <span class="filter-badge">Filtre active</span>
+                    }
+                </p>
+            </div>
+
+            <div class="jobs-grid">
+                @foreach (var job in paginatedJobs)
+                {
+                    <div class="job-card" @onclick="() => NavigateToApply(job.Id)">
+                        <div class="job-card-header">
+                            <div class="job-title-section">
+                                <h3 class="job-title">@job.Title</h3>
+                                @if (IsNewJob(job.CreatedOn))
+                                {
+                                    <span class="badge badge-new">NOU</span>
+                                }
+                                @if (job.IsSalaryMentionated && job.Salary > 0)
+                                {
+                                    <span class="badge badge-salary">Salariu menționat</span>
+                                }
+                            </div>
+                            
+                            <div class="company-info">
+                                <span class="company-icon">🏢</span>
+                                <span class="company-name">@GetCompanyName(job.CompanyId)</span>
+                            </div>
+                        </div>
+
+                        <div class="job-card-body">
+                            <div class="job-meta">
+                                <div class="meta-item">
+                                    <span class="meta-icon">📂</span>
+                                    <span class="meta-text">@job.Category</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-icon">⏰</span>
+                                    <span class="meta-text">@job.WorkTime</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-icon">📍</span>
+                                    <span class="meta-text">@job.Location</span>
+                                </div>
+                                <div class="meta-item">
+                                    <span class="meta-icon">💼</span>
+                                    <span class="meta-text">@job.Experience</span>
+                                </div>
+                            </div>
+
+                            @if (!string.IsNullOrEmpty(job.Description))
+                            {
+                                <p class="job-description">@TruncateText(job.Description, 120)</p>
+                            }
+
+                            @if (!string.IsNullOrEmpty(job.Skills))
+                            {
+                                <div class="job-skills">
+                                    @foreach (var skill in job.Skills.Split(',').Take(5))
+                                    {
+                                        <span class="skill-tag">@skill.Trim()</span>
+                                    }
+                                    @if (job.Skills.Split(',').Length > 5)
+                                    {
+                                        <span class="skill-tag more">+@(job.Skills.Split(',').Length - 5)</span>
+                                    }
+                                </div>
+                            }
+
+                            @if (job.IsSalaryMentionated && job.Salary > 0)
+                            {
+                                <div class="salary-section">
+                                    <span class="salary-icon">💰</span>
+                                    <span class="salary-amount">@job.Salary MDL</span>
+                                    <span class="salary-label">pe lună</span>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="job-card-footer">
+                            <div class="job-date">
+                                <span class="date-icon">📅</span>
+                                Postat @GetRelativeTime(job.CreatedOn)
+                            </div>
+                            <button class="btn-apply" @onclick:stopPropagation="true" @onclick="() => NavigateToApply(job.Id)">
+                                Aplică acum →
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Pagination -->
+            @if (totalPages > 1)
+            {
+                <div class="pagination">
+                    <button class="page-btn" @onclick="PreviousPage" disabled="@(currentPage == 1)">
+                        ← Anterior
+                    </button>
+                    
+                    <div class="page-numbers">
+                        @for (int i = 1; i <= totalPages; i++)
+                        {
+                            var pageNum = i;
+                            <button class="page-number @(currentPage == pageNum ? "active" : "")" 
+                                    @onclick="() => GoToPage(pageNum)">
+                                @pageNum
+                            </button>
+                        }
+                    </div>
+                    
+                    <button class="page-btn" @onclick="NextPage" disabled="@(currentPage == totalPages)">
+                        Următoarea →
+                    </button>
+                </div>
+            }
+        }
     </div>
-}
+</div>
 
 @code {
     private List<JobDto> jobs;
+    private List<JobDto> filteredJobs = new();
+    private List<JobDto> paginatedJobs = new();
     private List<CompanyDto> companies;
     private string statusMessage;
+    private string alertType = "info";
     private string userId;
+
+    // Filters
+    private string searchTerm = "";
+    private string selectedCategory = "";
+    private string selectedWorkTime = "";
+    private string selectedExperience = "";
+    private string salaryFilter = "all";
+    private string sortBy = "date-desc";
+
+    // Lists for filters
+    private List<string> categories = new();
+    private List<string> workTimes = new();
+    private List<string> experiences = new();
+
+    // Pagination
+    private int currentPage = 1;
+    private int itemsPerPage = 9;
+    private int totalPages => (int)Math.Ceiling((double)filteredJobs.Count / itemsPerPage);
+    private int totalJobs => jobs?.Count ?? 0;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -78,21 +312,216 @@ else
             try
             {
                 userId = await LocalStorage.GetItemAsync<string>("userId");
+                
                 jobs = await Http.GetFromJsonAsync<List<JobDto>>("http://localhost:5142/api/Job");
                 companies = await Http.GetFromJsonAsync<List<CompanyDto>>("http://localhost:5142/api/Company");
                 
-                statusMessage = jobs != null && jobs.Any() 
-                    ? "Jobs loaded successfully!" 
-                    : "No jobs found.";
+                if (jobs != null && jobs.Any())
+                {
+                    ExtractFilterOptions();
+                    filteredJobs = jobs;
+                    SortJobs(sortBy);
+                    UpdatePagination();
+                    statusMessage = $"Succes! {jobs.Count} joburi încărcate.";
+                    alertType = "success";
+                }
+                else
+                {
+                    statusMessage = "Nu există joburi disponibile momentan.";
+                    alertType = "info";
+                    jobs = new List<JobDto>();
+                    filteredJobs = new List<JobDto>();
+                }
             }
             catch (Exception ex)
             {
-                statusMessage = $"Error loading jobs: {ex.Message}";
+                statusMessage = $"Eroare la încărcarea joburilor: {ex.Message}";
+                alertType = "info";
                 jobs = new List<JobDto>();
+                filteredJobs = new List<JobDto>();
             }
             
             StateHasChanged();
         }
+    }
+
+    private void ExtractFilterOptions()
+    {
+        if (jobs != null && jobs.Any())
+        {
+            categories = jobs.Select(j => j.Category).Distinct().OrderBy(c => c).ToList();
+            workTimes = jobs.Select(j => j.WorkTime.ToString()).Distinct().OrderBy(w => w).ToList();
+            experiences = jobs.Select(j => j.Experience.ToString()).Distinct().OrderBy(e => e).ToList();
+        }
+    }
+
+    private void FilterJobs()
+    {
+        filteredJobs = jobs;
+
+        // Search filter
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filteredJobs = filteredJobs.Where(j =>
+                j.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                j.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                j.Category.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                GetCompanyName(j.CompanyId).Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
+            ).ToList();
+        }
+
+        // Category filter
+        if (!string.IsNullOrWhiteSpace(selectedCategory))
+        {
+            filteredJobs = filteredJobs.Where(j => j.Category == selectedCategory).ToList();
+        }
+
+        // Work time filter
+        if (!string.IsNullOrWhiteSpace(selectedWorkTime))
+        {
+            filteredJobs = filteredJobs.Where(j => j.WorkTime.ToString() == selectedWorkTime).ToList();
+        }
+
+        // Experience filter
+        if (!string.IsNullOrWhiteSpace(selectedExperience))
+        {
+            filteredJobs = filteredJobs.Where(j => j.Experience.ToString() == selectedExperience).ToList();
+        }
+
+        // Salary filter
+        filteredJobs = salaryFilter switch
+        {
+            "with-salary" => filteredJobs.Where(j => j.IsSalaryMentionated && j.Salary > 0).ToList(),
+            "no-salary" => filteredJobs.Where(j => !j.IsSalaryMentionated || j.Salary == 0).ToList(),
+            _ => filteredJobs
+        };
+
+        SortJobs(sortBy);
+        currentPage = 1;
+        UpdatePagination();
+    }
+
+    private void SortJobs(string sortType)
+    {
+        sortBy = sortType;
+
+        filteredJobs = sortType switch
+        {
+            "date-desc" => filteredJobs.OrderByDescending(j => j.CreatedOn).ToList(),
+            "date-asc" => filteredJobs.OrderBy(j => j.CreatedOn).ToList(),
+            "salary-desc" => filteredJobs.OrderByDescending(j => j.Salary).ToList(),
+            "salary-asc" => filteredJobs.OrderBy(j => j.Salary).ToList(),
+            "title" => filteredJobs.OrderBy(j => j.Title).ToList(),
+            _ => filteredJobs
+        };
+
+        UpdatePagination();
+    }
+
+    private void ResetFilters()
+    {
+        searchTerm = "";
+        selectedCategory = "";
+        selectedWorkTime = "";
+        selectedExperience = "";
+        salaryFilter = "all";
+        sortBy = "date-desc";
+        currentPage = 1;
+        FilterJobs();
+    }
+
+    private void ClearSearch()
+    {
+        searchTerm = "";
+        FilterJobs();
+    }
+
+    private void UpdatePagination()
+    {
+        var skip = (currentPage - 1) * itemsPerPage;
+        paginatedJobs = filteredJobs.Skip(skip).Take(itemsPerPage).ToList();
+        StateHasChanged();
+    }
+
+    private void PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            UpdatePagination();
+        }
+    }
+
+    private void NextPage()
+    {
+        if (currentPage < totalPages)
+        {
+            currentPage++;
+            UpdatePagination();
+        }
+    }
+
+    private void GoToPage(int page)
+    {
+        currentPage = page;
+        UpdatePagination();
+    }
+
+    private void NavigateToApply(Guid jobId)
+    {
+        Nav.NavigateTo($"/JobApply/{jobId}");
+    }
+
+    private string GetCompanyName(Guid? companyId)
+    {
+        if (!companyId.HasValue || companies == null)
+            return "Companie necunoscută";
+
+        var company = companies.FirstOrDefault(c => c.Id == companyId.Value);
+        return company?.CompanyName ?? "Companie necunoscută";
+    }
+
+    private bool IsNewJob(DateTime createdAt)
+    {
+        return (DateTime.Now - createdAt).TotalDays <= 3;
+    }
+
+    private string GetRelativeTime(DateTime date)
+    {
+        var timeSpan = DateTime.Now - date;
+
+        if (timeSpan.TotalMinutes < 1)
+            return "acum";
+        if (timeSpan.TotalMinutes < 60)
+            return $"acum {(int)timeSpan.TotalMinutes} minute";
+        if (timeSpan.TotalHours < 24)
+            return $"acum {(int)timeSpan.TotalHours} ore";
+        if (timeSpan.TotalDays < 7)
+            return $"acum {(int)timeSpan.TotalDays} zile";
+        if (timeSpan.TotalDays < 30)
+            return $"acum {(int)(timeSpan.TotalDays / 7)} săptămâni";
+
+        return date.ToString("dd.MM.yyyy");
+    }
+
+    private string TruncateText(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
+            return text;
+
+        return text.Substring(0, maxLength) + "...";
+    }
+
+    private string GetInitials(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return "?";
+
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2)
+            return $"{parts[0][0]}{parts[1][0]}".ToUpper();
+
+        return name.Substring(0, Math.Min(2, name.Length)).ToUpper();
     }
 
     private async Task Logout()
