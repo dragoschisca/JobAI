@@ -23,10 +23,18 @@ public class RequestController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    public IActionResult GetAllRequestForCandidat(Guid id)
+    public IActionResult GetAllJobRequestForCandidat(Guid id)
     {
-        var result = _dbcontext.Requests.Where(r => r.UserId == id).ToList();
-        return Ok(result);
+        //in requests sa gasesc toate aplicarile candidatului la joburi
+        var userApplies = _dbcontext.Requests.Where(apply => apply.UserId == id).ToList();
+        
+        //stochez intr-o lista id-urile
+        var userAppliesId = userApplies.Select(app => app.JobId);
+
+        //extrag din jobs fiecare aplicare dupa id
+        var userJobs = _dbcontext.Jobs.Where(job => userAppliesId.Contains(job.Id)).ToList<Job>();
+        //sa returnez lista de joburi la care a aplicat
+        return Ok(userJobs);
     }
 
     [HttpPost("UploadCv")]

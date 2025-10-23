@@ -25,12 +25,10 @@ public class AuthController : ControllerBase
     [HttpPost("Login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
-        // Afișează ce vine în request
         Console.WriteLine("=== LOGIN REQUEST ===");
         Console.WriteLine("Email: " + request.Email);
         Console.WriteLine("Password: " + request.Password);
 
-        // Verifică dacă user există în baza de date
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
 
         if (user == null)
@@ -41,7 +39,6 @@ public class AuthController : ControllerBase
     
         Console.WriteLine("User found: " + user.Email);
 
-        // Verifică parola
         if (user.Password != request.Password)
         {
             Console.WriteLine("Password mismatch!");
@@ -50,11 +47,10 @@ public class AuthController : ControllerBase
 
         Console.WriteLine("Login successful!");
 
-        // Returnează date pentru frontend
         return Ok(new
         {
             Message = "Login reușit!",
-            Name = user.Email
+            Id = user.Id
         });
     }
 

@@ -1,4 +1,5 @@
 namespace Shared.DTOs;
+
     public class JobDto
     {
         public Guid Id { get; set; }

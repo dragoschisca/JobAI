@@ -12,6 +12,7 @@
   <component name="ChangeListManager">
     <list default="true" id="a301c04b-5db7-4c0e-955d-636fcf939e53" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.ProjectJob/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.ProjectJob/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ResumeChecker/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/ResumeChecker/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -20,6 +21,13 @@
   </component>
   <component name="DpaMonitoringSettings">
     <option name="firstShow" value="false" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="CSS File" />
+      </list>
+    </option>
   </component>
   <component name="Git.Settings">
     <branch-grouping />
@@ -42,6 +50,7 @@
     <setting file="file://$PROJECT_DIR$/BackendAPI/BackendAPI/Domain/Entites/Company.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/BackendAPI/BackendAPI/Domain/Entites/User.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/BackendAPI/BackendAPI/Infrastructure/Data/ApplicationDbContext.cs" root0="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/BackendAPI/BackendAPI/WebAPI/Controllers/AuthController.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/BackendAPI/BackendAPI/WebAPI/Controllers/CandidatController.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/BackendAPI/BackendAPI/WebAPI/Controllers/CompanyController.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/BackendAPI/BackendAPI/WebAPI/Controllers/JobController.cs" root0="FORCE_HIGHLIGHTING" />
@@ -49,11 +58,14 @@
     <setting file="file://$PROJECT_DIR$/BackendAPI/BackendAPI/appsettings.json" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/FrontendBlazor/FrontendBlazor/Components/Pages/Candidat/AddCandidat.razor" root0="FORCE_HIGHLIGHTING" root1="FORCE_HIGHLIGHTING" root2="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/FrontendBlazor/FrontendBlazor/Components/Pages/Candidat/ShowCandidat.razor" root0="FORCE_HIGHLIGHTING" root1="FORCE_HIGHLIGHTING" root2="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/FrontendBlazor/FrontendBlazor/Components/Pages/Candidat/ShowProfile.razor" root0="FORCE_HIGHLIGHTING" root1="FORCE_HIGHLIGHTING" root2="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/FrontendBlazor/FrontendBlazor/Components/Pages/Company/AddCompany.razor" root0="FORCE_HIGHLIGHTING" root1="FORCE_HIGHLIGHTING" root2="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/FrontendBlazor/FrontendBlazor/Components/Pages/Company/ShowCompanies.razor" root0="FORCE_HIGHLIGHTING" root1="FORCE_HIGHLIGHTING" root2="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/FrontendBlazor/FrontendBlazor/Components/Pages/Company/ShowCompaniesJobs.razor" root0="FORCE_HIGHLIGHTING" root1="FORCE_HIGHLIGHTING" root2="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/FrontendBlazor/FrontendBlazor/Components/Pages/Job/AddJob.razor" root0="FORCE_HIGHLIGHTING" root1="FORCE_HIGHLIGHTING" root2="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/FrontendBlazor/FrontendBlazor/Components/Pages/Job/JobApply.razor" root0="FORCE_HIGHLIGHTING" root1="FORCE_HIGHLIGHTING" root2="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/FrontendBlazor/FrontendBlazor/Components/Pages/Job/ShowJobs.razor" root0="FORCE_HIGHLIGHTING" root1="FORCE_HIGHLIGHTING" root2="FORCE_HIGHLIGHTING" />
+    <setting file="file://$PROJECT_DIR$/FrontendBlazor/FrontendBlazor/Components/Pages/Login.razor" root0="FORCE_HIGHLIGHTING" root1="FORCE_HIGHLIGHTING" root2="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Shared/Shared/DTOs/AdminDto.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Shared/Shared/DTOs/CandidatDto.cs" root0="FORCE_HIGHLIGHTING" />
     <setting file="file://$PROJECT_DIR$/Shared/Shared/DTOs/CompanyDto.cs" root0="FORCE_HIGHLIGHTING" />
@@ -83,6 +95,7 @@
     &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;last_opened_file_path&quot;: &quot;/Users/dragoschisca/ProjectJob/ProjectJob.sln&quot;,
+    &quot;list.type.of.created.stylesheet&quot;: &quot;CSS&quot;,
     &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
     &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
     &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
@@ -91,7 +104,7 @@
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
-  <component name="RunManager" selected=".NET Launch Settings Profile.FrontendBlazor: http">
+  <component name="RunManager" selected=".NET Launch Settings Profile.BackendAPI: http">
     <configuration name="BackendAPI: http" type="LaunchSettings" factoryName=".NET Launch Settings Profile">
       <option name="LAUNCH_PROFILE_PROJECT_FILE_PATH" value="$PROJECT_DIR$/BackendAPI/BackendAPI/BackendAPI.csproj" />
       <option name="LAUNCH_PROFILE_TFM" value="net9.0" />
@@ -174,7 +187,14 @@
       <workItem from="1758962263696" duration="2586000" />
       <workItem from="1759076911626" duration="6747000" />
       <workItem from="1759262005288" duration="2681000" />
-      <workItem from="1759348033919" duration="2385000" />
+      <workItem from="1759348033919" duration="3309000" />
+      <workItem from="1759521896443" duration="5985000" />
+      <workItem from="1759781405216" duration="3264000" />
+      <workItem from="1760287480562" duration="11768000" />
+      <workItem from="1760644255329" duration="7096000" />
+      <workItem from="1761068844088" duration="2552000" />
+      <workItem from="1761072675073" duration="4720000" />
+      <workItem from="1761208275518" duration="5095000" />
     </task>
     <task id="LOCAL-00001" summary="Create connection and testing entites">
       <option name="closed" value="true" />

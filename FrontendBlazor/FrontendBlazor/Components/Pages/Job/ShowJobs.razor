@@ -22,7 +22,11 @@
             {
                 <div class="user-section">
                     <div class="user-info">
-                        <div class="user-avatar">@GetInitials(userId)</div>
+                        <div class="user-avatar">
+                            <NavLink class="nav-link" href=@($"/ShowProfile/{userId}") Match="NavLinkMatch.All">
+                                @GetInitials(userId)
+                            </NavLink>
+                        </div>
                         <div class="user-details">
                             <span class="user-label">Logat ca</span>
                             <span class="user-name">@userId</span>

@@ -4,20 +4,45 @@
 
 <h3>ShowProfile</h3>
 
+@if (user == null)
+{
+    <p>Loading profile...</p>
+}
+else
+{
+    <h4>@user.FirstName - @user.LastName</h4>
+
+    <p>Applied jobs</p>
+    @if (appliedJobs == null || appliedJobs.Count == 0)
+    {
+        <p>No jobs applied yet.</p>
+    }
+    else
+    {
+        @foreach (var j in appliedJobs)
+        {
+            <p>@j.Title - @j.Category - @j.CreatedOn</p>
+        }
+    }
+}
+
 @code {
     [Parameter]
-    public Guid UserId { get; set; }
+    public Guid userId { get; set; }
+
+    public List<JobDto> appliedJobs = new();
     protected CandidatDto user;
     protected string statusMessage;
 
 
     protected override async Task OnInitializedAsync()
     {
-        user = await Http.GetFromJsonAsync<CandidatDto>($"http://localhost:5142/api/Candidat/GetCandidatById/{UserId}");
+        user = await Http.GetFromJsonAsync<CandidatDto>($"http://localhost:5142/api/Candidat/{userId}");
 
         if (user != null)
         {
             statusMessage = "Profile loaded succesfully!";
+            appliedJobs = await Http.GetFromJsonAsync<List<JobDto>>($"http://localhost:5142/api/Request/{userId}");
         }
         else
         {
