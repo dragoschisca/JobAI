@@ -1,52 +1,273 @@
 @page "/ShowProfile/{UserId:guid}"
 @inject HttpClient Http
+@inject NavigationManager navManager
 @using Shared.DTOs
 
-<h3>ShowProfile</h3>
+<head>
+    <link href="CSS/ShowProfile.css" rel="stylesheet" />
+</head>
 
-@if (user == null)
-{
-    <p>Loading profile...</p>
-}
-else
-{
-    <h4>@user.FirstName - @user.LastName</h4>
-
-    <p>Applied jobs</p>
-    @if (appliedJobs == null || appliedJobs.Count == 0)
+<div class="profile-container">
+    @if (user == null)
     {
-        <p>No jobs applied yet.</p>
+        <div class="loading-section">
+            <div class="spinner"></div>
+            <p>Se încarcă profilul...</p>
+        </div>
     }
     else
     {
-        @foreach (var j in appliedJobs)
-        {
-            <p>@j.Title - @j.Category - @j.CreatedOn</p>
-        }
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <div class="profile-avatar">
+                <div class="avatar-circle">
+                    @GetInitials(user.FirstName, user.LastName)
+                </div>
+            </div>
+            <div class="profile-info">
+                <h1>@user.FirstName @user.LastName</h1>
+                <div class="profile-meta">
+                    <span class="meta-item">
+                        <span class="icon">📧</span>
+                        @user.Email
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📝</div>
+                <div class="stat-content">
+                    <div class="stat-number">@(appliedJobs?.Count ?? 0)</div>
+                    <div class="stat-label">Aplicații trimise</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⏱️</div>
+                <div class="stat-content">
+                    <div class="stat-number">@GetRecentApplications()</div>
+                    <div class="stat-label">Ultima săptămână</div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-content">
+                    <div class="stat-number">@GetUniqueCategories()</div>
+                    <div class="stat-label">Categorii</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Applied Jobs Section -->
+        <div class="jobs-section">
+            <div class="section-header">
+                <h2>Aplicații trimise</h2>
+                <div class="filter-tabs">
+                    <button class="filter-tab @(filterStatus == "all" ? "active" : "")" 
+                            @onclick='() => SetFilter("all")'>
+                        Toate (@(appliedJobs?.Count ?? 0))
+                    </button>
+                    <button class="filter-tab @(filterStatus == "recent" ? "active" : "")" 
+                            @onclick='() => SetFilter("recent")'>
+                        Recente
+                    </button>
+                </div>
+            </div>
+
+            @if (appliedJobs == null || appliedJobs.Count == 0)
+            {
+                <div class="empty-state">
+                    <div class="empty-icon">📭</div>
+                    <h3>Nicio aplicație încă</h3>
+                    <p>Când vei aplica la joburi, acestea vor apărea aici.</p>
+                    <button class="btn-primary" @onclick="NavigateToJobs">
+                        Explorează joburi
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="jobs-list">
+                    @foreach (var job in GetFilteredJobs())
+                    {
+                        <div class="job-item" @onclick="() => ViewJobDetails(job.Id)">
+                            <div class="job-main">
+                                <div class="job-title-section">
+                                    <h3>@job.Title</h3>
+                                    @if (IsRecentApplication(job.CreatedOn))
+                                    {
+                                        <span class="badge badge-new">NOU</span>
+                                    }
+                                </div>
+                                
+                                <div class="job-details-row">
+                                    <span class="detail-badge category">
+                                        <span class="icon">💼</span>
+                                        @job.Category
+                                    </span>
+                                    <span class="detail-badge">
+                                        <span class="icon">📍</span>
+                                        @job.Location
+                                    </span>
+                                    <span class="detail-badge">
+                                        <span class="icon">⏰</span>
+                                        @job.WorkTime
+                                    </span>
+                                    <span class="detail-badge">
+                                        <span class="icon">🎓</span>
+                                        @job.Experience
+                                    </span>
+                                </div>
+
+                                @if (job.IsSalaryMentionated && job.Salary > 0)
+                                {
+                                    <div class="job-salary">
+                                        <span class="icon">💰</span>
+                                        <span class="salary-amount">@job.Salary MDL</span>
+                                    </div>
+                                }
+
+                                @if (!string.IsNullOrEmpty(job.Skills))
+                                {
+                                    <div class="job-skills">
+                                        @foreach (var skill in job.Skills.Split(',').Take(4))
+                                        {
+                                            <span class="skill-tag">@skill.Trim()</span>
+                                        }
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="job-footer">
+                                <span class="applied-date">
+                                    <span class="icon">📅</span>
+                                    Aplicat @GetRelativeTime(job.CreatedOn)
+                                </span>
+                                <button class="btn-view" @onclick:stopPropagation @onclick="() => ViewJobDetails(job.Id)">
+                                    Vezi detalii →
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Back Button -->
+        <div class="back-section">
+            <button class="btn-back" @onclick="NavigateBack">
+                ← Înapoi
+            </button>
+        </div>
     }
-}
+</div>
 
 @code {
     [Parameter]
-    public Guid userId { get; set; }
+    public Guid UserId { get; set; }
 
-    public List<JobDto> appliedJobs = new();
-    protected CandidatDto user;
-    protected string statusMessage;
-
+    private List<JobDto> appliedJobs = new();
+    private CandidatDto user;
+    private string statusMessage;
+    private string filterStatus = "all";
 
     protected override async Task OnInitializedAsync()
     {
-        user = await Http.GetFromJsonAsync<CandidatDto>($"http://localhost:5142/api/Candidat/{userId}");
+        try
+        {
+            user = await Http.GetFromJsonAsync<CandidatDto>($"http://localhost:5142/api/Candidat/{UserId}");
 
-        if (user != null)
-        {
-            statusMessage = "Profile loaded succesfully!";
-            appliedJobs = await Http.GetFromJsonAsync<List<JobDto>>($"http://localhost:5142/api/Request/{userId}");
+            if (user != null)
+            {
+                statusMessage = "Profile loaded successfully!";
+                appliedJobs = await Http.GetFromJsonAsync<List<JobDto>>($"http://localhost:5142/api/Request/{UserId}");
+                
+                // Sort by most recent first
+                appliedJobs = appliedJobs?.OrderByDescending(j => j.CreatedOn).ToList() ?? new List<JobDto>();
+            }
+            else
+            {
+                statusMessage = "Failed to load user data!";
+            }
         }
-        else
+        catch (Exception ex)
         {
-            statusMessage = "Fail to load user data!";
+            Console.WriteLine($"Error loading profile: {ex.Message}");
+            statusMessage = "Error loading profile!";
         }
+    }
+
+    private string GetInitials(string firstName, string lastName)
+    {
+        var first = !string.IsNullOrEmpty(firstName) ? firstName[0].ToString().ToUpper() : "";
+        var last = !string.IsNullOrEmpty(lastName) ? lastName[0].ToString().ToUpper() : "";
+        return first + last;
+    }
+
+    private int GetRecentApplications()
+    {
+        if (appliedJobs == null) return 0;
+        return appliedJobs.Count(j => (DateTime.Now - j.CreatedOn).TotalDays <= 7);
+    }
+
+    private int GetUniqueCategories()
+    {
+        if (appliedJobs == null) return 0;
+        return appliedJobs.Select(j => j.Category).Distinct().Count();
+    }
+
+    private bool IsRecentApplication(DateTime date)
+    {
+        return (DateTime.Now - date).TotalDays <= 3;
+    }
+
+    private string GetRelativeTime(DateTime date)
+    {
+        var timeSpan = DateTime.Now - date;
+        
+        if (timeSpan.TotalMinutes < 60)
+            return $"acum {(int)timeSpan.TotalMinutes} min";
+        if (timeSpan.TotalHours < 24)
+            return $"acum {(int)timeSpan.TotalHours} ore";
+        if (timeSpan.TotalDays < 7)
+            return $"acum {(int)timeSpan.TotalDays} zile";
+        if (timeSpan.TotalDays < 30)
+            return $"acum {(int)(timeSpan.TotalDays / 7)} săptămâni";
+        
+        return date.ToString("dd.MM.yyyy");
+    }
+
+    private void SetFilter(string status)
+    {
+        filterStatus = status;
+        StateHasChanged();
+    }
+
+    private List<JobDto> GetFilteredJobs()
+    {
+        if (appliedJobs == null) return new List<JobDto>();
+
+        return filterStatus switch
+        {
+            "recent" => appliedJobs.Where(j => (DateTime.Now - j.CreatedOn).TotalDays <= 7).ToList(),
+            _ => appliedJobs
+        };
+    }
+
+    private void ViewJobDetails(Guid jobId)
+    {
+        navManager.NavigateTo($"/job/{jobId}");
+    }
+
+    private void NavigateToJobs()
+    {
+        navManager.NavigateTo("/Home");
+    }
+
+    private void NavigateBack()
+    {
+        navManager.NavigateTo("/Home");
     }
 }
