@@ -70,29 +70,17 @@ public class RequestController : ControllerBase
         Console.WriteLine($"📄 File saved: {filePath}");
 
         var names = fullName.Split(' ', 2, StringSplitOptions.TrimEntries);
-        var candidat = new Candidat
-        {
-            FirstName = names[0],
-            LastName = names.Length > 1 ? names[1] : "",
-            Email = email,
-            CvPath = filePath,
-            Role = UserRole.Candidat
-        };
-
-        _dbcontext.Users.Add(candidat);
-        await _dbcontext.SaveChangesAsync();
-        Console.WriteLine($"👤 Candidate created: {candidat.FirstName} {candidat.LastName}, Id={candidat.Id}");
 
         var request = new Request
         {
             JobId = jobId,
-            UserId = candidat.Id,
+            UserId = userId,
             Status = Status.OnStayding
         };
 
         _dbcontext.Requests.Add(request);
         await _dbcontext.SaveChangesAsync();
-        Console.WriteLine($"📑 Request created for JobId={jobId} UserId={candidat.Id}");
+        Console.WriteLine($"📑 Request created for JobId={jobId} UserId={userId}");
 
         Console.WriteLine("🏁 UploadCv completed");
         return Ok(new { message = "CV uploaded and request created successfully!" });
