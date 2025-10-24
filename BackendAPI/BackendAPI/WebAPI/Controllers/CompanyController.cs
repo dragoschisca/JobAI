@@ -21,11 +21,17 @@ public class CompanyController : ControllerBase
     {
         return Ok(dbcontext.Companies.ToList());
     }
+    
+    [HttpGet("GetCompanyById/{id}")]
+    public IActionResult GetCompanyById(Guid id)
+    {
+        return Ok(dbcontext.Companies.Find(id));
+    }
 
     [HttpGet("{name}")]
     public IActionResult GetCompanyByName(string name)
     {
-        return Ok(dbcontext.Users.Find(name));
+        return Ok(dbcontext.Companies.Find(name));
     }
 
     [HttpGet("GetCompanyJobsById/{id}")]
