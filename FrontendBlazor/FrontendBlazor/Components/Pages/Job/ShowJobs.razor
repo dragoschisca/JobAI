@@ -24,12 +24,12 @@
                     <div class="user-info">
                         <div class="user-avatar">
                             <NavLink class="nav-link" href=@($"/ShowProfile/{userId}") Match="NavLinkMatch.All">
-                                @GetInitials(userId)
+                                @GetInitials(userEmail)
                             </NavLink>
                         </div>
                         <div class="user-details">
                             <span class="user-label">Logat ca</span>
-                            <span class="user-name">@userId</span>
+                            <span class="user-name">@userEmail</span>
                         </div>
                     </div>
                     <button class="btn-logout" @onclick="Logout">
@@ -289,6 +289,7 @@
     private string statusMessage;
     private string alertType = "info";
     private string userId;
+    private string userEmail;
 
     // Filters
     private string searchTerm = "";
@@ -316,6 +317,7 @@
             try
             {
                 userId = await LocalStorage.GetItemAsync<string>("userId");
+                userEmail = await LocalStorage.GetItemAsync<string>("userEmail");
                 
                 jobs = await Http.GetFromJsonAsync<List<JobDto>>("http://localhost:5142/api/Job");
                 companies = await Http.GetFromJsonAsync<List<CompanyDto>>("http://localhost:5142/api/Company");
