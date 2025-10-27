@@ -5,9 +5,14 @@ import PyPDF2
 from google import genai
 from pydantic import WithJsonSchema
 
-client = genai.Client(api_key="AIzaSyBMmL3Z8OoSH1DCVZFgoE2pIMqKdx1Wdp0")
+key = os.environ['GEMINI_API_KEY']
+
+client = genai.Client(api_key=key)
 
 data = json.loads(sys.stdin.read())
+
+#with open("jsonTest.json", "r") as f:
+ #   data = json.load(f)
 
 def json_to_variable():
     cv_path = data["cvPath"]
