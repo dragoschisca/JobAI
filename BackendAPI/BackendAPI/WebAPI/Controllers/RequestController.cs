@@ -80,7 +80,7 @@ public class RequestController : ControllerBase
             Status = request.Status,
         };
         
-        entity.Score = GetCvScore(jobId, entity, filePath);
+        entity.Score = CalculateCvScore(jobId, entity, filePath);
 
         _dbcontext.Requests.Add(entity);
         await _dbcontext.SaveChangesAsync();
@@ -90,8 +90,7 @@ public class RequestController : ControllerBase
         Console.WriteLine("UploadCv completed");
         return Ok(new { message = "CV uploaded and request created successfully!" });
     }
-
-    private string GetCvScore(Guid jobId, Request request, string filePath)
+    private string CalculateCvScore(Guid jobId, Request request, string filePath)
     {
         var appliedJob = _dbcontext.Jobs.FirstOrDefault(job => job.Id == jobId);
         if (appliedJob == null)
@@ -167,4 +166,16 @@ public class RequestController : ControllerBase
         }
     }
 
+    [HttpGet("GetCvScore/{userId}/{jobId}")]
+    public IActionResult GetCvScoreForAppliedJob(Guid userId, Guid jobId)
+    {
+        var request = _dbcontext.Requests.Where(r => r.UserId == userId && r.JobId == jobId).FirstOrDefault();
+    
+        if (request == null)
+        {
+            return NotFound("Request not found");
+        }
+    
+        return Ok(request.Score);
+    }
 }
