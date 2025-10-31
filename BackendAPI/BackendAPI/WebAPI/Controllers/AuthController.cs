@@ -1,11 +1,7 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 using BackendAPI.Domain.Entites;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
+using Shared.DTOs;
 
 namespace BackendAPI.WebAPI.Controllers;
 
@@ -27,38 +23,49 @@ public class AuthController : ControllerBase
     {
         Console.WriteLine("=== LOGIN REQUEST ===");
         Console.WriteLine("Email: " + request.Email);
-        Console.WriteLine("Password: " + request.Password);
-
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
-
+        Console.WriteLine("UserType: " + request.UserType);
+    
+        User user = null;
+    
+        if (request.UserType == "Candidat")
+        { 
+            user = await _db.Users.FirstOrDefaultAsync(u => 
+                u.Email == request.Email && 
+                u.Role == UserRole.Candidat);
+        }
+        else if (request.UserType == "Company")
+        { 
+            user = await _db.Users.FirstOrDefaultAsync(u => 
+                u.Email == request.Email && 
+                u.Role == UserRole.Company);
+        }
+        else
+        {
+            return BadRequest("Tip utilizator invalid.");
+        }
+    
         if (user == null)
         {
             Console.WriteLine("User not found in database!");
             return Unauthorized("Email sau parolă greșită.");
         }
-    
+
         Console.WriteLine("User found: " + user.Email);
-
-        if (user.Password != request.Password)
-        {
-            Console.WriteLine("Password mismatch!");
-            return Unauthorized("Email sau parolă greșită.");
-        }
-
-        Console.WriteLine("Login successful!");
-
-        return Ok(new
-        {
-            Message = "Login reușit!",
-            Id = user.Id
+        
+        return Ok(new 
+        { 
+            Message = "Login successful",
+            Id = user.Id,
+            Role = user.Role.ToString()
         });
     }
-
+    
     // --- DTO classes ---
     public class LoginRequest
     {
         public string Email { get; set; }
         public string Password { get; set; }
+        public string UserType { get; set; }
     }
     
 }
