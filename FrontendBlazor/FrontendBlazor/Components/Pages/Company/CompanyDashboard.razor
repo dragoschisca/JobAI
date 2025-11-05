@@ -1,0 +1,404 @@
+@page "/CompanyDashboard/{CompanyId:guid}"
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@using Shared.DTOs
+
+<head>
+    <link href="CSS/CompanyDashboard.css" rel="stylesheet" />
+</head>
+
+<div class="dashboard-container">
+    @if (company == null || jobs == null)
+    {
+        <div class="loading-section">
+            <div class="spinner"></div>
+            <p>Se încarcă dashboard-ul...</p>
+        </div>
+    }
+    else
+    {
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div class="company-info">
+                <div class="company-logo">
+                    <i class="bi bi-building-fill"></i>
+                </div>
+                <div>
+                    <h1>@company.CompanyName</h1>
+                    <p class="subtitle">Dashboard Recrutare</p>
+                </div>
+            </div>
+            <div class="header-actions">
+                <NavLink class="nav-link" href=@($"/AddJob/{CompanyId}") Match="NavLinkMatch.All">
+                    Postează Job Nou
+                </NavLink>
+            </div>
+        </header>
+
+        <!-- Statistics Cards -->
+        <section class="stats-grid">
+            <div class="stat-card blue">
+                <div class="stat-icon">📋</div>
+                <div class="stat-content">
+                    <div class="stat-number">@jobs.Count</div>
+                    <div class="stat-label">Joburi Active</div>
+                </div>
+            </div>
+            <div class="stat-card green">
+                <div class="stat-icon">📨</div>
+                <div class="stat-content">
+                    <div class="stat-number">@totalApplications</div>
+                    <div class="stat-label">Aplicații Totale</div>
+                </div>
+            </div>
+            <div class="stat-card orange">
+                <div class="stat-icon">👥</div>
+                <div class="stat-content">
+                    <div class="stat-number">@newApplicationsToday</div>
+                    <div class="stat-label">Aplicații Astăzi</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Filters -->
+        <section class="filters-section">
+            <div class="filter-tabs">
+                <button class="filter-tab @(activeTab == "all" ? "active" : "")" @onclick='() => SetActiveTab("all")'>
+                    Toate Joburile (@jobs.Count)
+                </button>
+                <button class="filter-tab @(activeTab == "pending" ? "active" : "")" @onclick='() => SetActiveTab("pending")'>
+                    Aplicații Noi (@GetPendingApplicationsCount())
+                </button>
+                <button class="filter-tab @(activeTab == "top" ? "active" : "")" @onclick='() => SetActiveTab("top")'>
+                    Top Candidați
+                </button>
+            </div>
+        </section>
+
+        <!-- Jobs List with Applications -->
+        <section class="jobs-section">
+            @if (activeTab == "all")
+            {
+                <div class="jobs-list">
+                    @foreach (var j in jobs)
+                    {
+                        var applicationsForJob = jobApplications.ContainsKey(j.Id) ? jobApplications[j.Id] : new List<ApplicationInfo>();
+                        
+                        <div class="job-item">
+                            <div class="job-header">
+                                <div class="job-title-section">
+                                    <h3>@j.Title</h3>
+                                    <span class="badge badge-category">@j.Category</span>
+                                    @if (IsNewJob(j.CreatedOn))
+                                    {
+                                        <span class="badge badge-new">NOU</span>
+                                    }
+                                </div>
+                                <div class="job-actions">
+                                    <button class="btn-icon" @onclick="@(() => NavManager.NavigateTo($"/JobDetails/{j.Id}"))" title="Detalii">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="btn-icon" @onclick="@(() => NavManager.NavigateTo($"/CompareApplications/{j.Id}"))" title="Compară Candidați">
+                                        <i class="bi bi-people"></i>
+                                    </button>
+                                    <button class="btn-icon" title="Editează">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="job-meta">
+                                <span><i class="bi bi-geo-alt"></i> @j.Location</span>
+                                <span><i class="bi bi-clock"></i> @j.WorkTime</span>
+                                <span><i class="bi bi-briefcase"></i> @j.Experience</span>
+                                @if (j.IsSalaryMentionated && j.Salary > 0)
+                                {
+                                    <span><i class="bi bi-currency-dollar"></i> @j.Salary MDL</span>
+                                }
+                                <span><i class="bi bi-calendar3"></i> Postat @GetRelativeTime(j.CreatedOn)</span>
+                            </div>
+
+                            <div class="applications-section">
+                                <div class="applications-header">
+                                    <h4>Aplicații (@applicationsForJob.Count)</h4>
+                                    @if (applicationsForJob.Any())
+                                    {
+                                        <button class="btn-view-all" @onclick="@(() => NavManager.NavigateTo($"/JobApplications/{j.Id}"))">
+                                            Vezi toate →
+                                        </button>
+                                    }
+                                </div>
+
+                                @if (applicationsForJob.Any())
+                                {
+                                    <div class="applicants-list">
+                                        @foreach (var app in applicationsForJob.Take(3))
+                                        {
+                                            <div class="applicant-card" @onclick="@(() => ViewCandidate(app.CandidateId))">
+                                                <div class="applicant-avatar">
+                                                    @GetInitials(app.CandidateName)
+                                                </div>
+                                                <div class="applicant-info">
+                                                    <div class="applicant-name">@app.CandidateName</div>
+                                                    <div class="applicant-email">@app.CandidateEmail</div>
+                                                </div>
+                                                <div class="applicant-score">
+                                                    <div class="score-circle @GetScoreClass(app.Score)">
+                                                        @app.Score%
+                                                    </div>
+                                                    <small>Match Score</small>
+                                                </div>
+                                            </div>
+                                        }
+                                        @if (applicationsForJob.Count > 3)
+                                        {
+                                            <div class="more-applicants">
+                                                +@(applicationsForJob.Count - 3) mai mulți candidați
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="no-applications">
+                                        <i class="bi bi-inbox"></i>
+                                        <p>Nicio aplicație încă</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else if (activeTab == "pending")
+            {
+                <div class="pending-applications">
+                    <h3>Aplicații Noi care Așteaptă Revizie</h3>
+                    @foreach (var job in jobs)
+                    {
+                        var pendingApps = jobApplications.ContainsKey(job.Id) 
+                            ? jobApplications[job.Id].Where(a => a.Status == Status.OnStayding).ToList() 
+                            : new List<ApplicationInfo>();
+                        
+                        @if (pendingApps.Any())
+                        {
+                            <div class="pending-job-section">
+                                <h4>@job.Title</h4>
+                                <div class="applicants-grid">
+                                    @foreach (var app in pendingApps)
+                                    {
+                                        <div class="applicant-card-detailed">
+                                            <div class="card-header">
+                                                <div class="applicant-avatar">@GetInitials(app.CandidateName)</div>
+                                                <div>
+                                                    <div class="applicant-name">@app.CandidateName</div>
+                                                    <div class="applicant-email">@app.CandidateEmail</div>
+                                                </div>
+                                                <div class="score-badge @GetScoreClass(app.Score)">
+                                                    @app.Score%
+                                                </div>
+                                            </div>
+                                            <div class="card-actions">
+                                                <button class="btn-success" @onclick="@(() => AcceptApplication(app.RequestId))">
+                                                    <i class="bi bi-check-circle"></i> Acceptă
+                                                </button>
+                                                <button class="btn-danger" @onclick="@(() => RejectApplication(app.RequestId))">
+                                                    <i class="bi bi-x-circle"></i> Respinge
+                                                </button>
+                                                <button class="btn-secondary" @onclick="@(() => ViewCandidate(app.CandidateId))">
+                                                    <i class="bi bi-eye"></i> Profil
+                                                </button>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            }
+            else if (activeTab == "top")
+            {
+                <div class="top-candidates-section">
+                    <h3>Top Candidați după Match Score</h3>
+                    <div class="top-candidates-list">
+                        @foreach (var topApp in GetTopCandidates().Take(10))
+                        {
+                            <div class="top-candidate-card">
+                                <div class="rank-badge">#{topApp.Rank}</div>
+                                <div class="applicant-avatar">@GetInitials(topApp.CandidateName)</div>
+                                <div class="candidate-details">
+                                    <div class="applicant-name">@topApp.CandidateName</div>
+                                    <div class="applicant-email">@topApp.CandidateEmail</div>
+                                    <div class="job-applied">Aplicat la: @topApp.JobTitle</div>
+                                </div>
+                                <div class="score-section">
+                                    <div class="score-circle-large @GetScoreClass(topApp.Score)">
+                                        @topApp.Score%
+                                    </div>
+                                </div>
+                                <button class="btn-view" @onclick="@(() => ViewCandidate(topApp.CandidateId))">
+                                    Vezi Profil
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </section>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid CompanyId { get; set; }
+
+    private CompanyDto? company;
+    private List<JobDto> jobs = new();
+    private Dictionary<Guid, List<ApplicationInfo>> jobApplications = new();
+    private string activeTab = "all";
+
+    private int totalApplications => jobApplications.Values.Sum(apps => apps.Count);
+    private int newApplicationsToday => jobApplications.Values.SelectMany(apps => apps).Count(a => a.AppliedDate.Date == DateTime.Today);
+    
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            company = await Http.GetFromJsonAsync<CompanyDto>($"http://localhost:5142/api/Company/GetCompanyById/{CompanyId}");
+            jobs = await Http.GetFromJsonAsync<List<JobDto>>($"http://localhost:5142/api/Company/GetCompanyJobsById/{CompanyId}") ?? new List<JobDto>();
+
+            await LoadApplicationsForAllJobs();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+    
+    private async Task LoadApplicationsForAllJobs()
+    {
+        var allRequests = await Http.GetFromJsonAsync<List<RequestDto>>($"http://localhost:5142/api/Request");
+
+        foreach (var job in jobs)
+        {
+            try
+            {
+                var jobRequests = allRequests.Where(r => r.JobId == job.Id).ToList();
+                var applications = new List<ApplicationInfo>();
+
+                foreach (var request in jobRequests)
+                {
+                    Console.WriteLine($"📝 Request ID: {request.Id}");
+                    Console.WriteLine($"   JobId: {request.JobId}");
+                    Console.WriteLine($"   UserId: {request.UserId}");
+                    Console.WriteLine($"   Score from API: '{request.Score}' (is null: {request.Score == null}, is empty: {string.IsNullOrEmpty(request.Score)})");
+                    
+                    var candidate = await Http.GetFromJsonAsync<CandidatDto>($"http://localhost:5142/api/Candidat/{request.UserId}");
+                    if (candidate != null)
+                    {
+                        var appInfo = new ApplicationInfo
+                        {
+                            RequestId = request.Id,
+                            CandidateId = candidate.Id,
+                            CandidateName = $"{candidate.FirstName} {candidate.LastName}",
+                            CandidateEmail = candidate.Email,
+                            Score = request.Score, // <---- din baza de date
+                            Status = request.Status,
+                            AppliedDate = job.CreatedOn,// dacă ai coloana CreatedAt
+                            JobTitle = job.Title
+                        };
+                        
+                        Console.WriteLine("USER ID: " + candidate.Id);
+                        Console.WriteLine("Job ID: " + job.Id);
+                        Console.WriteLine("Score ID: " + appInfo.Score);
+
+
+                        applications.Add(appInfo);
+                    }
+                }
+
+                jobApplications[job.Id] = applications;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Eroare la job {job.Title}: {ex.Message}");
+                jobApplications[job.Id] = new List<ApplicationInfo>();
+            }
+        }
+
+        // ✅ Forțăm refresh UI după ce s-au încărcat scorurile
+        StateHasChanged();
+    }
+    
+    private void SetActiveTab(string tab)
+    {
+        activeTab = tab;
+    }
+
+    private int GetPendingApplicationsCount()
+    {
+        return jobApplications.Values.SelectMany(apps => apps).Count(a => a.Status == Status.OnStayding);
+    }
+
+    private List<ApplicationInfo> GetTopCandidates()
+    {
+        return jobApplications.Values.SelectMany(apps => apps).ToList();
+    }
+
+    private string GetInitials(string name)
+    {
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2)
+            return $"{parts[0][0]}{parts[1][0]}".ToUpper();
+        return name.Substring(0, Math.Min(2, name.Length)).ToUpper();
+    }
+
+    private bool IsNewJob(DateTime createdOn)
+    {
+        return (DateTime.Now - createdOn).TotalDays <= 7;
+    }
+
+    private string GetRelativeTime(DateTime date)
+    {
+        var timeSpan = DateTime.Now - date;
+        if (timeSpan.TotalDays < 1) return "astăzi";
+        if (timeSpan.TotalDays < 7) return $"acum {(int)timeSpan.TotalDays} zile";
+        return date.ToString("dd.MM.yyyy");
+    }
+
+    private string GetScoreClass(string score)
+    {
+        var scoreValue = Int32.Parse(score);
+        if (scoreValue >= 75) return "high";
+        if (scoreValue >= 50) return "medium";
+        return "low";
+    }
+
+    private void ViewCandidate(Guid candidateId)
+    {
+        NavManager.NavigateTo($"/ShowProfile/{candidateId}");
+    }
+
+    private async Task AcceptApplication(Guid requestId)
+    {
+        Console.WriteLine($"Accepting application {requestId}");
+    }
+
+    private async Task RejectApplication(Guid requestId)
+    {
+        Console.WriteLine($"Rejecting application {requestId}");
+    }
+
+    public class ApplicationInfo
+    {
+        public Guid RequestId { get; set; }
+        public Guid CandidateId { get; set; }
+        public string CandidateName { get; set; } = string.Empty;
+        public string CandidateEmail { get; set; } = string.Empty;
+        public required string  Score { get; set; }
+        public Status Status { get; set; }
+        public DateTime AppliedDate { get; set; }
+        public string JobTitle { get; set; } = string.Empty;
+        public int Rank { get; set; }
+    }
+}

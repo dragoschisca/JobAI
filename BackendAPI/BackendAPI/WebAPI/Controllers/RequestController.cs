@@ -21,7 +21,23 @@ public class RequestController : ControllerBase
     [HttpGet]
     public IActionResult GetAllRequests()
     {
-        return Ok(_dbcontext.Requests.ToList());
+        var requests = _dbcontext.Requests.Select(r => new RequestDto
+        {
+            Id = r.Id,
+            JobId = r.JobId,
+            UserId = r.UserId,
+            Status = r.Status,
+            Score = r.Score 
+        }).ToList();
+
+        // ✅ LOG ce returnează API-ul
+        Console.WriteLine($"📊 GetAllRequests - Returning {requests.Count} requests:");
+        foreach (var req in requests)
+        {
+            Console.WriteLine($"   Request {req.Id}: JobId={req.JobId}, UserId={req.UserId}, Score='{req.Score}'");
+        }
+
+        return Ok(requests);
     }
 
     [HttpGet("{id}")]
@@ -65,32 +81,29 @@ public class RequestController : ControllerBase
         }
 
         Console.WriteLine($"File saved: {filePath}");
-
-        var request = new RequestDto
-        {
-            JobId = jobId,
-            UserId = userId,
-            Status = Status.OnStayding
-        };
         
         var entity = new Request
         {
-            JobId = request.JobId,
-            UserId = request.UserId,
-            Status = request.Status,
+            JobId = jobId,
+            UserId = userId,
+            Status = Status.OnStayding,
+            Score = "0"
         };
         
-        entity.Score = CalculateCvScore(jobId, entity, filePath);
+        entity.Score = CalculateCvScore(jobId, filePath);
 
         _dbcontext.Requests.Add(entity);
         await _dbcontext.SaveChangesAsync();
 
-        Console.WriteLine($"Request created for JobId={jobId} UserId={userId}");
+        Console.WriteLine($"Request created for JobId={jobId} UserId={userId} with Score={entity.Score}");
 
-        Console.WriteLine("UploadCv completed");
-        return Ok(new { message = "CV uploaded and request created successfully!" });
+        return Ok(new { 
+            message = "CV uploaded and request created successfully!",
+            score = entity.Score 
+        });
     }
-    private string CalculateCvScore(Guid jobId, Request request, string filePath)
+    
+    private string CalculateCvScore(Guid jobId, string filePath)
     {
         var appliedJob = _dbcontext.Jobs.FirstOrDefault(job => job.Id == jobId);
         if (appliedJob == null)
@@ -133,11 +146,11 @@ public class RequestController : ControllerBase
         string output = process.StandardOutput.ReadToEnd();
         string errors = process.StandardError.ReadToEnd();
         
-        Console.WriteLine(output);
+        Console.WriteLine($"Python output: {output}");
 
         process.WaitForExit();
     
-        Console.WriteLine(jsonInput);
+        Console.WriteLine($"JSON input sent to Python: {jsonInput}");
         
         if (!string.IsNullOrWhiteSpace(errors))
             Console.WriteLine($"Python error: {errors}");
@@ -145,23 +158,16 @@ public class RequestController : ControllerBase
         try
         {
             var result = JsonSerializer.Deserialize<JsonElement>(output);
-            
-
-            //Console.WriteLine(result.ToString());
-            
-            
             string score = result.GetProperty("score").GetRawText().Trim('"');
 
-            Console.WriteLine($"CV score: {score}");
-
-            // Setează score pe entity deja track-uit
-            request.Score = score;
+            Console.WriteLine($"CV score calculated: {score}");
 
             return score;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"JSON error: {ex.Message}");
+            Console.WriteLine($"JSON parsing error: {ex.Message}");
+            Console.WriteLine($"Raw output was: {output}");
             return "0";
         }
     }
@@ -169,13 +175,15 @@ public class RequestController : ControllerBase
     [HttpGet("GetCvScore/{userId}/{jobId}")]
     public IActionResult GetCvScoreForAppliedJob(Guid userId, Guid jobId)
     {
-        var request = _dbcontext.Requests.Where(r => r.UserId == userId && r.JobId == jobId).FirstOrDefault();
+        var request = _dbcontext.Requests
+            .Where(r => r.UserId == userId && r.JobId == jobId)
+            .FirstOrDefault();
     
         if (request == null)
         {
             return NotFound("Request not found");
         }
     
-        return Ok(request.Score);
+        return Ok(new { score = request.Score ?? "0" });
     }
 }

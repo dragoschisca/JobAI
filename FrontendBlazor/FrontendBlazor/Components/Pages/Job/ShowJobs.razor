@@ -18,14 +18,27 @@
                 <p class="subtitle">@totalJobs joburi disponibile</p>
             </div>
             
-            @if (userId != null)
+            @if (!string.IsNullOrEmpty(userId))
             {
                 <div class="user-section">
                     <div class="user-info">
                         <div class="user-avatar">
-                            <NavLink class="nav-link" href=@($"/ShowProfile/{userId}") Match="NavLinkMatch.All">
+                            @if (GetUserRole() == UserRole.Candidat)
+                            {
+                                <NavLink class="nav-link" href=@($"/ShowProfile/{userId}") Match="NavLinkMatch.All">
+                                    @GetInitials(userEmail)
+                                </NavLink>
+                            }
+                            else if (GetUserRole() == UserRole.Company && !string.IsNullOrEmpty(companyId))
+                            {
+                                <NavLink class="nav-link" href=@($"/CompanyDashboard/{companyId}") Match="NavLinkMatch.All">
+                                    @GetInitials(userEmail)
+                                </NavLink>
+                            }
+                            else
+                            {
                                 @GetInitials(userEmail)
-                            </NavLink>
+                            }
                         </div>
                         <div class="user-details">
                             <span class="user-label">Logat ca</span>
@@ -282,14 +295,17 @@
 </div>
 
 @code {
-    private List<JobDto> jobs;
+    private List<JobDto>? jobs;
     private List<JobDto> filteredJobs = new();
     private List<JobDto> paginatedJobs = new();
-    private List<CompanyDto> companies;
-    private string statusMessage;
+    private List<CompanyDto>? companies;
+    private UserDto? userEntite;
+    private string statusMessage = string.Empty;
     private string alertType = "info";
-    private string userId;
-    private string userEmail;
+    private string? userId;
+    private string? userEmail;
+    private string? companyId;
+    private UserRole? currentUserRole = null;
 
     // Filters
     private string searchTerm = "";
@@ -318,6 +334,54 @@
             {
                 userId = await LocalStorage.GetItemAsync<string>("userId");
                 userEmail = await LocalStorage.GetItemAsync<string>("userEmail");
+                var userRole = await LocalStorage.GetItemAsync<string>("userRole");
+                
+                // Setează rolul din localStorage dacă există
+                if (!string.IsNullOrEmpty(userRole))
+                {
+                    if (Enum.TryParse<UserRole>(userRole, out var role))
+                    {
+                        currentUserRole = role;
+                    }
+                }
+                
+                // Încearcă să încarci utilizatorul - fie candidat, fie companie
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    try
+                    {
+                        // Încearcă să încarci ca și candidat
+                        var candidatResponse = await Http.GetAsync($"http://localhost:5142/api/Candidat/{userId}");
+                        if (candidatResponse.IsSuccessStatusCode && candidatResponse.StatusCode != System.Net.HttpStatusCode.NoContent)
+                        {
+                            userEntite = await candidatResponse.Content.ReadFromJsonAsync<UserDto>();
+                            if (userEntite != null)
+                            {
+                                currentUserRole = userEntite.Role;
+                                Console.WriteLine($"User loaded as Candidat with role: {currentUserRole}");
+                            }
+                        }
+                        else
+                        {
+                            // Dacă nu e candidat, încearcă să încarci ca și companie
+                            var companyResponse = await Http.GetAsync($"http://localhost:5142/api/Company/GetCompanyById/{userId}");
+                            if (companyResponse.IsSuccessStatusCode && companyResponse.StatusCode != System.Net.HttpStatusCode.NoContent)
+                            {
+                                var company = await companyResponse.Content.ReadFromJsonAsync<CompanyDto>();
+                                if (company != null)
+                                {
+                                    currentUserRole = UserRole.Company;
+                                    companyId = company.Id.ToString();
+                                    Console.WriteLine($"User loaded as Company with ID: {companyId}");
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error loading user: {ex.Message}");
+                    }
+                }
                 
                 jobs = await Http.GetFromJsonAsync<List<JobDto>>("http://localhost:5142/api/Job");
                 companies = await Http.GetFromJsonAsync<List<CompanyDto>>("http://localhost:5142/api/Company");
@@ -351,6 +415,11 @@
         }
     }
 
+    private UserRole GetUserRole()
+    {
+        return currentUserRole ?? UserRole.Candidat;
+    }
+
     private void ExtractFilterOptions()
     {
         if (jobs != null && jobs.Any())
@@ -363,6 +432,9 @@
 
     private void FilterJobs()
     {
+        if (jobs == null)
+            return;
+
         filteredJobs = jobs;
 
         // Search filter
@@ -370,7 +442,7 @@
         {
             filteredJobs = filteredJobs.Where(j =>
                 j.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                j.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                (j.Description != null && j.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)) ||
                 j.Category.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
                 GetCompanyName(j.CompanyId).Contains(searchTerm, StringComparison.OrdinalIgnoreCase)
             ).ToList();
@@ -513,12 +585,12 @@
     private string TruncateText(string text, int maxLength)
     {
         if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
-            return text;
+            return text ?? "";
 
         return text.Substring(0, maxLength) + "...";
     }
 
-    private string GetInitials(string name)
+    private string GetInitials(string? name)
     {
         if (string.IsNullOrEmpty(name))
             return "?";
@@ -534,6 +606,7 @@
     {
         await LocalStorage.RemoveItemAsync("isLoggedIn");
         await LocalStorage.RemoveItemAsync("userId");
+        await LocalStorage.RemoveItemAsync("userEmail");
         Nav.NavigateTo("/login", forceLoad: true);
     }
 }

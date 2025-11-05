@@ -25,7 +25,11 @@ public class CompanyController : ControllerBase
     [HttpGet("GetCompanyById/{id}")]
     public IActionResult GetCompanyById(Guid id)
     {
-        return Ok(dbcontext.Companies.Find(id));
+        var company = dbcontext.Companies.Find(id);
+        
+        if(company == null)  return NotFound();
+        
+        return Ok(company);
     }
 
     [HttpGet("{name}")]

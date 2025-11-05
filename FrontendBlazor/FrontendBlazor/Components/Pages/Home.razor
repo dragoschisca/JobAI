@@ -239,6 +239,9 @@
         }
     }
 
+
+    private Dictionary<Guid, string> companyNames = new();
+    
     private async Task LoadJobs()
     {
         try
@@ -247,14 +250,28 @@
             if (response != null)
             {
                 allJobs = response;
+                
+                var companyIds = allJobs.Select(j => j.CompanyId).Distinct().ToList();
+                foreach (var id in companyIds)
+                {
+                    var company = await Http.GetFromJsonAsync<CompanyDto>($"http://localhost:5142/api/Company/GetCompanyById/{id}");
+                    if (company != null)
+                        companyNames[id] = company.CompanyName;
+                }
+                
                 filteredJobs = allJobs;
                 CalculateStatistics();
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Eroare la încărcarea joburilor: {ex.Message}");
+            Console.WriteLine($"Eroare: {ex.Message}");
         }
+    }
+    
+    private string GetCompanyName(Guid companyId)
+    {
+        return companyNames.GetValueOrDefault(companyId, "Companie necunoscută");
     }
 
     private void CalculateStatistics()
@@ -361,11 +378,6 @@
             var c when c.Contains("sănătate") => "🏥",
             _ => "💼"
         };
-    }
-
-    private string GetCompanyName(Guid? companyId)
-    {
-        return companyId.HasValue ? $"Compania #{companyId.Value.ToString().Substring(0, 8)}" : "Companie necunoscută";
     }
 
     private bool IsNewJob(DateTime createdAt)

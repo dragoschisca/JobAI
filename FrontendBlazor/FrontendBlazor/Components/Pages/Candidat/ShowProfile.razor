@@ -227,7 +227,9 @@
 
     private string GetCvScore(Guid jobId)
     {
-        return cvScores.TryGetValue(jobId, out var score) ? score : "N/A";
+        return cvScores.TryGetValue(jobId, out var score) ? score.Split(':')[1].Trim()
+            .Trim('}', '"', ' ') 
+            : "N/A";
     }
 
     private string GetInitials(string firstName, string lastName)

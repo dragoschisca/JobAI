@@ -10,4 +10,5 @@ public class Request
     public Guid JobId { get; set; }
     public Guid UserId { get; set; }
     public Status Status { get; set; }
+    public string Score { get; set; } = "0";
 }
