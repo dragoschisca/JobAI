@@ -1,0 +1,325 @@
+@page "/TopCandidates/{CompanyId:guid}"
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@using Shared.DTOs
+
+<head>
+    <link href="CSS/TopCandidates.css" rel="stylesheet" />
+</head>
+
+<div class="top-candidates-container">
+    @if (isLoading)
+    {
+        <div class="loading-section">
+            <div class="spinner"></div>
+            <p>Se încarcă candidații...</p>
+        </div>
+    }
+    else
+    {
+        <!-- Header -->
+        <header class="page-header">
+            <div class="header-content">
+                <button class="btn-back" @onclick="GoBack">
+                    <i class="bi bi-arrow-left"></i> Înapoi
+                </button>
+                <div>
+                    <h1>🏆 Top Candidați</h1>
+                    <p class="subtitle">Cei mai potriviți candidați pentru fiecare job</p>
+                </div>
+            </div>
+            <div class="header-stats">
+                <div class="stat-badge">
+                    <i class="bi bi-briefcase"></i>
+                    <span>@jobsWithCandidates.Count joburi</span>
+                </div>
+                <div class="stat-badge">
+                    <i class="bi bi-people"></i>
+                    <span>@totalCandidates candidați</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="jobs-grid">
+            @if (jobsWithCandidates.Any())
+            {
+                @foreach (var jobData in jobsWithCandidates)
+                {
+                    <div class="job-card">
+                        <div class="job-card-header">
+                            <div class="job-title-section">
+                                <h2>@jobData.Job.Title</h2>
+                                <span class="badge badge-category">@jobData.Job.Category</span>
+                            </div>
+                            <button class="btn-view-all" @onclick="@(() => ViewAllApplications(jobData.Job.Id))">
+                                Vezi toate aplicațiile
+                                <i class="bi bi-arrow-right"></i>
+                            </button>
+                        </div>
+
+                        <div class="job-info">
+                            <span><i class="bi bi-geo-alt"></i> @jobData.Job.Location</span>
+                            <span><i class="bi bi-clock"></i> @jobData.Job.WorkTime</span>
+                            <span><i class="bi bi-briefcase"></i> @jobData.Job.Experience</span>
+                            <span><i class="bi bi-calendar3"></i> @GetRelativeTime(jobData.Job.CreatedOn)</span>
+                        </div>
+
+                        <div class="candidates-section">
+                            <h3>
+                                <i class="bi bi-trophy"></i> 
+                                Top @jobData.TopCandidates.Count Candidați
+                            </h3>
+                            
+                            <div class="candidates-podium">
+                                @foreach (var (candidate, index) in jobData.TopCandidates.Select((c, i) => (c, i)))
+                                {
+                                    var position = index + 1;
+                                    <div class="candidate-card position-@position">
+                                        <div class="position-badge position-@position">
+                                            @if (position == 1) { <text>🥇</text> }
+                                            else if (position == 2) { <text>🥈</text> }
+                                            else if (position == 3) { <text>🥉</text> }
+                                            <span>#@position</span>
+                                        </div>
+                                        
+                                        <div class="candidate-avatar @GetScoreClass(candidate.Score)">
+                                            @GetInitials(candidate.CandidateName)
+                                        </div>
+                                        
+                                        <div class="candidate-info">
+                                            <h4 class="candidate-name">@candidate.CandidateName</h4>
+                                            <p class="candidate-email">@candidate.CandidateEmail</p>
+                                            <div class="candidate-meta">
+                                                <span class="status-badge status-@candidate.Status.ToString().ToLower()">
+                                                    @GetStatusText(candidate.Status)
+                                                </span>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="score-section">
+                                            <div class="score-circle @GetScoreClass(candidate.Score)">
+                                                <div class="score-value">@candidate.Score</div>
+                                                <div class="score-label">MATCH</div>
+                                            </div>
+                                            <div class="score-bar">
+                                                <div class="score-fill @GetScoreClass(candidate.Score)" 
+                                                     style="width: @candidate.Score%"></div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="candidate-actions">
+                                            <button class="btn-primary" @onclick="@(() => ViewCandidate(candidate.CandidateId))">
+                                                <i class="bi bi-person"></i> Vezi Profil
+                                            </button>
+                                            @if (candidate.Status == Status.OnStayding)
+                                            {
+                                                <button class="btn-success" @onclick="@(() => AcceptApplication(candidate.RequestId))">
+                                                    <i class="bi bi-check-circle"></i> Acceptă
+                                                </button>
+                                                <button class="btn-danger" @onclick="@(() => RejectApplication(candidate.RequestId))">
+                                                    <i class="bi bi-x-circle"></i> Respinge
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <i class="bi bi-inbox"></i>
+                    <h3>Nicio aplicație încă</h3>
+                    <p>Joburile companiei nu au primit aplicații până acum.</p>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public Guid CompanyId { get; set; }
+
+    private bool isLoading = true;
+    private List<JobWithTopCandidates> jobsWithCandidates = new();
+    private int totalCandidates => jobsWithCandidates.Sum(j => j.TopCandidates.Count);
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            await LoadTopCandidates();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadTopCandidates()
+    {
+        // Încarcă joburile companiei
+        var jobs = await Http.GetFromJsonAsync<List<JobDto>>($"http://localhost:5142/api/Company/GetCompanyJobsById/{CompanyId}") ?? new List<JobDto>();
+        
+        // Încarcă toate aplicațiile
+        var allRequests = await Http.GetFromJsonAsync<List<RequestDto>>($"http://localhost:5142/api/Request");
+
+        foreach (var job in jobs)
+        {
+            // Filtrează aplicațiile pentru acest job
+            var jobRequests = allRequests?.Where(r => r.JobId == job.Id).ToList() ?? new List<RequestDto>();
+            
+            if (!jobRequests.Any()) continue;
+
+            var applications = new List<ApplicationInfo>();
+
+            foreach (var request in jobRequests)
+            {
+                try
+                {
+                    var candidate = await Http.GetFromJsonAsync<CandidatDto>($"http://localhost:5142/api/Candidat/{request.UserId}");
+                    if (candidate != null)
+                    {
+                        applications.Add(new ApplicationInfo
+                        {
+                            RequestId = request.Id,
+                            CandidateId = candidate.Id,
+                            CandidateName = $"{candidate.FirstName} {candidate.LastName}",
+                            CandidateEmail = candidate.Email,
+                            Score = request.Score,
+                            Status = request.Status,
+                            JobTitle = job.Title
+                        });
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading candidate: {ex.Message}");
+                }
+            }
+
+            var topCandidates = applications
+                .OrderByDescending(a => int.TryParse(a.Score, out var score) ? score : 0)
+                .Take(3)
+                .ToList();
+
+            if (topCandidates.Any())
+            {
+                jobsWithCandidates.Add(new JobWithTopCandidates
+                {
+                    Job = job,
+                    TopCandidates = topCandidates
+                });
+            }
+        }
+
+        jobsWithCandidates = jobsWithCandidates
+            .OrderByDescending(j => int.TryParse(j.TopCandidates.FirstOrDefault()?.Score, out var score) ? score : 0)
+            .ToList();
+    }
+
+    private string GetInitials(string name)
+    {
+        var parts = name.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2)
+            return $"{parts[0][0]}{parts[1][0]}".ToUpper();
+        return name.Substring(0, Math.Min(2, name.Length)).ToUpper();
+    }
+
+    private string GetRelativeTime(DateTime date)
+    {
+        var timeSpan = DateTime.Now - date;
+        if (timeSpan.TotalDays < 1) return "astăzi";
+        if (timeSpan.TotalDays < 7) return $"acum {(int)timeSpan.TotalDays} zile";
+        if (timeSpan.TotalDays < 30) return $"acum {(int)(timeSpan.TotalDays / 7)} săptămâni";
+        return date.ToString("dd.MM.yyyy");
+    }
+
+    private string GetScoreClass(string score)
+    {
+        if (int.TryParse(score, out var scoreValue))
+        {
+            if (scoreValue >= 75) return "high";
+            if (scoreValue >= 50) return "medium";
+        }
+        return "low";
+    }
+
+    private string GetStatusText(Status status)
+    {
+        return status switch
+        {
+            Status.OnStayding => "În așteptare",
+            Status.Accepted => "Acceptat",
+            Status.Rejected => "Respins",
+            _ => status.ToString()
+        };
+    }
+
+    private void ViewCandidate(Guid candidateId)
+    {
+        NavManager.NavigateTo($"/ShowProfile/{candidateId}");
+    }
+
+    private void ViewAllApplications(Guid jobId)
+    {
+        NavManager.NavigateTo($"/JobApplications/{jobId}");
+    }
+
+    private void GoBack()
+    {
+        NavManager.NavigateTo($"/CompanyDashboard/{CompanyId}");
+    }
+
+    private async Task AcceptApplication(Guid requestId)
+    {
+        try
+        {
+            Console.WriteLine($"Accepting application {requestId}");
+            // await Http.PostAsync($"http://localhost:5142/api/Request/Accept/{requestId}", null);
+            // await LoadTopCandidates();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error accepting application: {ex.Message}");
+        }
+    }
+
+    private async Task RejectApplication(Guid requestId)
+    {
+        try
+        {
+            Console.WriteLine($"Rejecting application {requestId}");
+            // await Http.PostAsync($"http://localhost:5142/api/Request/Reject/{requestId}", null);
+            // await LoadTopCandidates();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error rejecting application: {ex.Message}");
+        }
+    }
+
+    public class JobWithTopCandidates
+    {
+        public JobDto Job { get; set; } = null!;
+        public List<ApplicationInfo> TopCandidates { get; set; } = new();
+    }
+
+    public class ApplicationInfo
+    {
+        public Guid RequestId { get; set; }
+        public Guid CandidateId { get; set; }
+        public string CandidateName { get; set; } = string.Empty;
+        public string CandidateEmail { get; set; } = string.Empty;
+        public required string Score { get; set; }
+        public Status Status { get; set; }
+        public string JobTitle { get; set; } = string.Empty;
+    }
+}

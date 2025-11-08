@@ -60,25 +60,18 @@
             </div>
         </section>
 
-        <!-- Quick Filters -->
         <section class="filters-section">
             <div class="filter-tabs">
                 <button class="filter-tab @(activeTab == "all" ? "active" : "")" @onclick='() => SetActiveTab("all")'>
                     Toate Joburile (@jobs.Count)
                 </button>
-                <button class="filter-tab @(activeTab == "pending" ? "active" : "")" @onclick='() => SetActiveTab("pending")'>
-                    Aplicații Noi (@GetPendingApplicationsCount())
-                </button>
-                <button class="filter-tab @(activeTab == "top" ? "active" : "")" @onclick='() => SetActiveTab("top")'>
-                    Top Candidați
-                </button>
+                <NavLink class="btn-primary" href=@($"/TopCandidates/{CompanyId}") Match="NavLinkMatch.All">
+                    Vezi top 3 candidați per job
+                </NavLink>
             </div>
         </section>
 
-        <!-- Jobs List with Applications -->
         <section class="jobs-section">
-            @if (activeTab == "all")
-            {
                 <div class="jobs-list">
                     @foreach (var j in jobs)
                     {
@@ -169,82 +162,6 @@
                         </div>
                     }
                 </div>
-            }
-            else if (activeTab == "pending")
-            {
-                <div class="pending-applications">
-                    <h3>Aplicații Noi care Așteaptă Revizie</h3>
-                    @foreach (var job in jobs)
-                    {
-                        var pendingApps = jobApplications.ContainsKey(job.Id) 
-                            ? jobApplications[job.Id].Where(a => a.Status == Status.OnStayding).ToList() 
-                            : new List<ApplicationInfo>();
-                        
-                        @if (pendingApps.Any())
-                        {
-                            <div class="pending-job-section">
-                                <h4>@job.Title</h4>
-                                <div class="applicants-grid">
-                                    @foreach (var app in pendingApps)
-                                    {
-                                        <div class="applicant-card-detailed">
-                                            <div class="card-header">
-                                                <div class="applicant-avatar">@GetInitials(app.CandidateName)</div>
-                                                <div>
-                                                    <div class="applicant-name">@app.CandidateName</div>
-                                                    <div class="applicant-email">@app.CandidateEmail</div>
-                                                </div>
-                                                <div class="score-badge @GetScoreClass(app.Score)">
-                                                    @app.Score%
-                                                </div>
-                                            </div>
-                                            <div class="card-actions">
-                                                <button class="btn-success" @onclick="@(() => AcceptApplication(app.RequestId))">
-                                                    <i class="bi bi-check-circle"></i> Acceptă
-                                                </button>
-                                                <button class="btn-danger" @onclick="@(() => RejectApplication(app.RequestId))">
-                                                    <i class="bi bi-x-circle"></i> Respinge
-                                                </button>
-                                                <button class="btn-secondary" @onclick="@(() => ViewCandidate(app.CandidateId))">
-                                                    <i class="bi bi-eye"></i> Profil
-                                                </button>
-                                            </div>
-                                        </div>
-                                    }
-                                </div>
-                            </div>
-                        }
-                    }
-                </div>
-            }
-            else if (activeTab == "top")
-            {
-                <div class="top-candidates-section">
-                    <h3>Top Candidați după Match Score</h3>
-                    <div class="top-candidates-list">
-                        @foreach (var topApp in GetTopCandidates().Take(10))
-                        {
-                            <div class="top-candidate-card">
-                                <div class="rank-badge">#{topApp.Rank}</div>
-                                <div class="applicant-avatar">@GetInitials(topApp.CandidateName)</div>
-                                <div class="candidate-details">
-                                    <div class="applicant-name">@topApp.CandidateName</div>
-                                    <div class="applicant-email">@topApp.CandidateEmail</div>
-                                    <div class="job-applied">Aplicat la: @topApp.JobTitle</div>
-                                </div>
-                                <div class="score-section">
-                                    <div class="score-circle-large @GetScoreClass(topApp.Score)">
-                                        @topApp.Score%
-                                    </div>
-                                </div>
-                                <button class="btn-view" @onclick="@(() => ViewCandidate(topApp.CandidateId))">
-                                    Vezi Profil
-                                </button>
-                            </div>
-                        }
-                    </div>
-                </div>
-            }
         </section>
     }
 </div>
@@ -302,9 +219,9 @@
                             CandidateId = candidate.Id,
                             CandidateName = $"{candidate.FirstName} {candidate.LastName}",
                             CandidateEmail = candidate.Email,
-                            Score = request.Score, // <---- din baza de date
+                            Score = request.Score, 
                             Status = request.Status,
-                            AppliedDate = job.CreatedOn,// dacă ai coloana CreatedAt
+                            AppliedDate = job.CreatedOn,
                             JobTitle = job.Title
                         };
                         
@@ -325,8 +242,7 @@
                 jobApplications[job.Id] = new List<ApplicationInfo>();
             }
         }
-
-        // ✅ Forțăm refresh UI după ce s-au încărcat scorurile
+        
         StateHasChanged();
     }
     
@@ -399,6 +315,5 @@
         public Status Status { get; set; }
         public DateTime AppliedDate { get; set; }
         public string JobTitle { get; set; } = string.Empty;
-        public int Rank { get; set; }
     }
 }
