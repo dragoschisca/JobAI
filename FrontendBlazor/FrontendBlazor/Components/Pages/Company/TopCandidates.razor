@@ -2,6 +2,7 @@
 @inject HttpClient Http
 @inject NavigationManager NavManager
 @using Shared.DTOs
+@inject IJSRuntime JS
 
 <head>
     <link href="CSS/TopCandidates.css" rel="stylesheet" />
@@ -108,9 +109,11 @@
                                         </div>
                                         
                                         <div class="candidate-actions">
-                                            <button class="btn-primary" @onclick="@(() => ViewCandidate(candidate.CandidateId))">
-                                                <i class="bi bi-person"></i> Vezi Profil
-                                            </button>
+                                            <a href="http://localhost:5142/uploads/@candidate.CvFileName" 
+                                               target="_blank" 
+                                               class="btn-primary">
+                                                <i class="bi bi-person"></i> Vezi CV
+                                            </a>
                                             @if (candidate.Status == Status.OnStayding)
                                             {
                                                 <button class="btn-success" @onclick="@(() => AcceptApplication(candidate.RequestId))">
@@ -191,6 +194,7 @@
                         {
                             RequestId = request.Id,
                             CandidateId = candidate.Id,
+                            CvFileName = request.CvFileName,
                             CandidateName = $"{candidate.FirstName} {candidate.LastName}",
                             CandidateEmail = candidate.Email,
                             Score = request.Score,
@@ -263,9 +267,26 @@
         };
     }
 
-    private void ViewCandidate(Guid candidateId)
+    private async Task OpenCv(string cvFileName)
     {
-        NavManager.NavigateTo($"/ShowProfile/{candidateId}");
+        Console.Write("AAAAAAAAAAAAAAAA");
+        
+        if (string.IsNullOrEmpty(cvFileName))
+        {
+            Console.WriteLine("cvFileName is null or empty!");
+            return;
+        }
+
+        try
+        {
+            var url = $"http://localhost:5142/uploads/{cvFileName}";
+            Console.WriteLine($"Attempting to open: {url}");
+            await JS.InvokeVoidAsync("open", url, "_blank");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
     }
 
     private void ViewAllApplications(Guid jobId)
@@ -316,6 +337,7 @@
     {
         public Guid RequestId { get; set; }
         public Guid CandidateId { get; set; }
+        public string CvFileName { get; set; }
         public string CandidateName { get; set; } = string.Empty;
         public string CandidateEmail { get; set; } = string.Empty;
         public required string Score { get; set; }
