@@ -27,10 +27,10 @@ public class RequestController : ControllerBase
             JobId = r.JobId,
             UserId = r.UserId,
             Status = r.Status,
-            Score = r.Score 
+            Score = r.Score ,
+            CvFileName = r.CvFileName,
         }).ToList();
 
-        // ✅ LOG ce returnează API-ul
         Console.WriteLine($"📊 GetAllRequests - Returning {requests.Count} requests:");
         foreach (var req in requests)
         {
@@ -87,7 +87,8 @@ public class RequestController : ControllerBase
             JobId = jobId,
             UserId = userId,
             Status = Status.OnStayding,
-            Score = "0"
+            Score = "0",
+            CvFileName = uniqueFileName
         };
         
         entity.Score = CalculateCvScore(jobId, filePath);
