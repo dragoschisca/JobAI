@@ -11,4 +11,5 @@ public class Request
     public Guid UserId { get; set; }
     public Status Status { get; set; }
     public string Score { get; set; } = "0";
+    public string CvFileName { get; set; } 
 }
