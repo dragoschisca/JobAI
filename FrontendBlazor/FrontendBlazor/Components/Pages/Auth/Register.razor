@@ -1,0 +1,307 @@
+@page "/Register"
+@using FrontendBlazor.Components.Pages.Auth.HelperClasses
+@using Shared.DTOs
+@rendermode InteractiveServer
+@inject NavigationManager navManager
+@inject HttpClient Http
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-8 col-lg-6">
+        <div class="card shadow">
+            <div class="card-body p-4">
+                <EditForm method="post" FormName="RegisterForm" OnValidSubmit="RegisterForm" Model="registerDto" autocomplete="off">
+                    <h3 class="text-center mb-4">Înregistrare</h3>
+                    
+                    <!-- Selector tip utilizator -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Înregistrare ca:</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" 
+                                   class="btn-check" 
+                                   name="userType" 
+                                   id="candidateRadio" 
+                                   value="Candidat"
+                                   checked="@(registerDto.UserType == UserRole.Candidat)"
+                                   @onchange="@(() => registerDto.UserType = UserRole.Candidat)">
+                            <label class="btn btn-outline-primary" for="candidateRadio">
+                                <i class="bi bi-person-fill"></i> Candidat
+                            </label>
+
+                            <input type="radio" 
+                                   class="btn-check" 
+                                   name="userType" 
+                                   id="companyRadio"
+                                   value="Company"
+                                   checked="@(registerDto.UserType == UserRole.Company)"
+                                   @onchange="@(() => registerDto.UserType = UserRole.Company)">
+                            <label class="btn btn-outline-primary" for="companyRadio">
+                                <i class="bi bi-building-fill"></i> Companie
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Câmpuri comune -->
+                    <div class="mb-3">
+                        <label for="Email" class="form-label">Email *</label>
+                        <InputText id="Email" @bind-Value="registerDto.Email" class="form-control border-dark" placeholder="exemplu@email.com"/>
+                        <ValidationMessage For="@(() => registerDto.Email)" />
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="Password" class="form-label">Parolă *</label>
+                        <InputText id="Password" @bind-Value="registerDto.Password" type="password" class="form-control border-dark" placeholder="Minim 6 caractere"/>
+                        <ValidationMessage For="@(() => registerDto.Password)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="ConfirmPassword" class="form-label">Confirmă Parola *</label>
+                        <InputText id="ConfirmPassword" @bind-Value="registerDto.ConfirmPassword" type="password" class="form-control border-dark" placeholder="Reintroduceți parola"/>
+                        <ValidationMessage For="@(() => registerDto.ConfirmPassword)" />
+                    </div>
+
+                    <!-- Câmpuri pentru Candidat -->
+                    @if (registerDto.UserType == UserRole.Candidat)
+                    {
+                        <div class="border-top pt-3 mt-3">
+                            <h5 class="mb-3">Informații Candidat</h5>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="FirstName" class="form-label">Prenume *</label>
+                                    <InputText id="FirstName" @bind-Value="registerDto.FirstName" class="form-control border-dark" placeholder="Ion"/>
+                                    <ValidationMessage For="@(() => registerDto.FirstName)" />
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="LastName" class="form-label">Nume *</label>
+                                    <InputText id="LastName" @bind-Value="registerDto.LastName" class="form-control border-dark" placeholder="Popescu"/>
+                                    <ValidationMessage For="@(() => registerDto.LastName)" />
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="AboutMe" class="form-label">Despre Mine</label>
+                                <InputTextArea id="AboutMe" @bind-Value="registerDto.AboutMe" class="form-control border-dark" rows="3" placeholder="Descriere scurtă despre tine..."/>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Câmpuri pentru Companie -->
+                    @if (registerDto.UserType == UserRole.Company)
+                    {
+                        <div class="border-top pt-3 mt-3">
+                            <h5 class="mb-3">Informații Companie</h5>
+                            
+                            <div class="mb-3">
+                                <label for="CompanyName" class="form-label">Nume Companie *</label>
+                                <InputText id="CompanyName" @bind-Value="registerDto.CompanyName" class="form-control border-dark" placeholder="ABC Company SRL"/>
+                                <ValidationMessage For="@(() => registerDto.CompanyName)" />
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="City" class="form-label">Oraș *</label>
+                                    <InputText id="City" @bind-Value="registerDto.City" class="form-control border-dark" placeholder="Chișinău"/>
+                                    <ValidationMessage For="@(() => registerDto.City)" />
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label for="OfficePhone" class="form-label">Telefon Birou</label>
+                                    <InputText id="OfficePhone" @bind-Value="registerDto.OfficePhone" class="form-control border-dark" placeholder="+373 XX XXX XXX"/>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="OfficeAddress" class="form-label">Adresă Birou *</label>
+                                <InputText id="OfficeAddress" @bind-Value="registerDto.OfficeAddress" class="form-control border-dark" placeholder="Str. Exemple, nr. 10"/>
+                                <ValidationMessage For="@(() => registerDto.OfficeAddress)" />
+                            </div>
+                        </div>
+                    }
+                    
+                    <div class="mb-3 mt-4">
+                        <button class="btn btn-primary w-100 py-2" type="submit" disabled="@isLoading">
+                            @if (isLoading)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                <span>Se procesează...</span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-person-plus-fill"></i>
+                                <span> Înregistrează-te</span>
+                            }
+                        </button>
+                    </div>
+                    
+                    @if (!string.IsNullOrEmpty(ErrorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill"></i> @ErrorMessage
+                        </div>
+                    }
+
+                    @if (ValidationErrors.Any())
+                    {
+                        <div class="alert alert-warning" role="alert">
+                            <strong>Validare:</strong>
+                            <ul class="mb-0 mt-2">
+                                @foreach (var error in ValidationErrors)
+                                {
+                                    <li>@error</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+                    
+                    <DataAnnotationsValidator/>
+                </EditForm>
+                
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        Ai deja cont? <a href="/Login">Autentifică-te</a>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code
+{
+    [SupplyParameterFromForm]
+    public RegisterRequest registerDto { get; set; } = new();
+    
+    public string ErrorMessage { get; set; } = string.Empty;
+    public List<string> ValidationErrors { get; set; } = new();
+    private bool isLoading = false;
+
+    protected async Task RegisterForm()
+    {
+        ErrorMessage = string.Empty;
+        ValidationErrors.Clear();
+        isLoading = true;
+        
+        try
+        {
+            // Validare client-side
+            if (!ValidateForm())
+            {
+                isLoading = false;
+                return;
+            }
+
+            var response = await Http.PostAsJsonAsync("http://localhost:5142/api/Auth/Register", registerDto);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<RegisterResponse>();
+                
+                // Salvare JWT token și informații utilizator
+                await LocalStorage.SetItemAsStringAsync("authToken", result.Token);
+                await LocalStorage.SetItemAsStringAsync("userId", result.Id.ToString());
+                await LocalStorage.SetItemAsStringAsync("userEmail", result.Email);
+                await LocalStorage.SetItemAsStringAsync("userRole", result.Role);
+                await LocalStorage.SetItemAsync("isLoggedIn", true);
+                await LocalStorage.SetItemAsync("tokenExpiry", result.ExpiresAt);
+                
+                Console.WriteLine($"Înregistrare reușită pentru: {result.Email}");
+                
+                // Redirect bazat pe rol
+                if (result.Role == "Company")
+                {
+                    navManager.NavigateTo("/CompanyDashboard", forceLoad: true);
+                }
+                else
+                {
+                    navManager.NavigateTo("/Home", forceLoad: true);
+                }
+            }
+            else
+            {
+                if (response.StatusCode == System.Net.HttpStatusCode.BadRequest)
+                {
+                    try
+                    {
+                        var errorResponse = await response.Content.ReadFromJsonAsync<ValidationErrorResponse>();
+                        if (errorResponse?.Errors != null && errorResponse.Errors.Any())
+                        {
+                            ValidationErrors = errorResponse.Errors;
+                            ErrorMessage = errorResponse.Message ?? "Validare eșuată.";
+                        }
+                        else
+                        {
+                            ErrorMessage = errorResponse?.Message ?? "Date invalide. Verifică câmpurile.";
+                        }
+                    }
+                    catch
+                    {
+                        ErrorMessage = "Date invalide. Verifică câmpurile.";
+                    }
+                }
+                else
+                {
+                    ErrorMessage = "A apărut o eroare la înregistrare.";
+                }
+                Console.WriteLine($"Register failed: {response.StatusCode}");
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            ErrorMessage = "Nu se poate conecta la server. Verifică dacă API-ul rulează.";
+            Console.WriteLine($"HTTP Exception: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "A apărut o eroare. Te rugăm încearcă din nou.";
+            Console.WriteLine($"Exception: {ex}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private bool ValidateForm()
+    {
+        ValidationErrors.Clear();
+
+        // Validări comune
+        if (string.IsNullOrWhiteSpace(registerDto.Email))
+            ValidationErrors.Add("Email-ul este obligatoriu.");
+        else if (!registerDto.Email.Contains("@"))
+            ValidationErrors.Add("Email-ul nu este valid.");
+
+        if (string.IsNullOrWhiteSpace(registerDto.Password))
+            ValidationErrors.Add("Parola este obligatorie.");
+        else if (registerDto.Password.Length < 6)
+            ValidationErrors.Add("Parola trebuie să conțină minim 6 caractere.");
+
+        if (registerDto.Password != registerDto.ConfirmPassword)
+            ValidationErrors.Add("Parolele nu se potrivesc.");
+
+        if (registerDto.UserType == UserRole.Candidat)
+        {
+            if (string.IsNullOrWhiteSpace(registerDto.FirstName))
+                ValidationErrors.Add("Prenumele este obligatoriu.");
+            
+            if (string.IsNullOrWhiteSpace(registerDto.LastName))
+                ValidationErrors.Add("Numele este obligatoriu.");
+        }
+
+        if (registerDto.UserType == UserRole.Company)
+        {
+            if (string.IsNullOrWhiteSpace(registerDto.CompanyName))
+                ValidationErrors.Add("Numele companiei este obligatoriu.");
+            
+            if (string.IsNullOrWhiteSpace(registerDto.City))
+                ValidationErrors.Add("Orașul este obligatoriu.");
+            
+            if (string.IsNullOrWhiteSpace(registerDto.OfficeAddress))
+                ValidationErrors.Add("Adresa biroului este obligatorie.");
+        }
+
+        return !ValidationErrors.Any();
+    }
+}

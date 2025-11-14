@@ -1,0 +1,170 @@
+@page "/Login"
+@rendermode InteractiveServer
+@inject NavigationManager navManager
+@inject HttpClient Http
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 col-lg-5">
+        <div class="card shadow">
+            <div class="card-body p-4">
+                <EditForm method="post" FormName="LoginForm" OnValidSubmit="LoginForm" Model="loginDto" autocomplete="off">
+                    <h3 class="text-center mb-4">Login</h3>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Logare ca:</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" 
+                                   class="btn-check" 
+                                   name="userType" 
+                                   id="candidateRadio" 
+                                   value="Candidate"
+                                   checked="@(loginDto.UserType == "Candidat")"
+                                   @onchange="@(() => loginDto.UserType = "Candidat")">
+                            <label class="btn btn-outline-primary" for="candidateRadio">
+                                <i class="bi bi-person-fill"></i> Candidat
+                            </label>
+
+                            <input type="radio" 
+                                   class="btn-check" 
+                                   name="userType" 
+                                   id="companyRadio"
+                                   value="Company"
+                                   checked="@(loginDto.UserType == "Company")"
+                                   @onchange="@(() => loginDto.UserType = "Company")">
+                            <label class="btn btn-outline-primary" for="companyRadio">
+                                <i class="bi bi-building-fill"></i> Companie
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="Email" class="form-label">Email</label>
+                        <InputText id="Email" @bind-Value="loginDto.Email" class="form-control border-dark" placeholder="exemplu@email.com"/>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="Password" class="form-label">Parolă</label>
+                        <InputText id="Password" @bind-Value="loginDto.Password" type="password" class="form-control border-dark" placeholder="••••••••"/>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <button class="btn btn-primary w-100" type="submit" disabled="@isLoading">
+                            @if (isLoading)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                <span>Se încarcă...</span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-box-arrow-in-right"></i>
+                                <span> Login</span>
+                            }
+                        </button>
+                    </div>
+                    
+                    @if (!string.IsNullOrEmpty(ErrorMessage))
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill"></i> @ErrorMessage
+                        </div>
+                    }
+                    
+                    <DataAnnotationsValidator/>
+                    <ValidationSummary/>
+                </EditForm>
+                
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        Nu ai cont? <a href="/Register">Înregistrează-te</a>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code
+{
+    [SupplyParameterFromForm]
+    public LoginRequest loginDto { get; set; } = new();
+    
+    public string ErrorMessage { get; set; } = string.Empty;
+    private bool isLoading = false;
+
+    protected async Task LoginForm()
+    {
+        ErrorMessage = string.Empty;
+        isLoading = true;
+        
+        try
+        {
+            var response = await Http.PostAsJsonAsync("http://localhost:5142/api/Auth/Login", loginDto);
+
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
+                
+                // Salvare JWT token și informații utilizator
+                await LocalStorage.SetItemAsStringAsync("authToken", result.Token);
+                await LocalStorage.SetItemAsStringAsync("userId", result.Id.ToString());
+                await LocalStorage.SetItemAsStringAsync("userEmail", result.Email);
+                await LocalStorage.SetItemAsStringAsync("userRole", result.Role);
+                await LocalStorage.SetItemAsync("isLoggedIn", true);
+                await LocalStorage.SetItemAsync("tokenExpiry", result.ExpiresAt);
+                
+                Console.WriteLine($"Login reușit pentru: {result.Email}");
+                
+                if (result.Role == "Company")
+                {
+                    navManager.NavigateTo("/CompanyDashboard", forceLoad: true);
+                }
+                else
+                {
+                    navManager.NavigateTo("/Home", forceLoad: true);
+                }
+            }
+            else
+            {
+                var errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+                ErrorMessage = errorResponse?.Message ?? "Email sau parolă greșită.";
+                Console.WriteLine($"Login failed: {response.StatusCode}");
+            }
+        }
+        catch (HttpRequestException ex)
+        {
+            ErrorMessage = "Nu se poate conecta la server. Verifică dacă API-ul rulează.";
+            Console.WriteLine($"HTTP Exception: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = "A apărut o eroare. Te rugăm încearcă din nou.";
+            Console.WriteLine($"Exception: {ex}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    public class LoginRequest
+    {
+        public string Email { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public string UserType { get; set; } = "Candidat";
+    }
+    
+    public class LoginResponse
+    {
+        public string Token { get; set; }
+        public Guid Id { get; set; }
+        public string Email { get; set; }
+        public string Role { get; set; }
+        public DateTime ExpiresAt { get; set; }
+    }
+    
+    public class ErrorResponse
+    {
+        public string Message { get; set; }
+    }
+}
