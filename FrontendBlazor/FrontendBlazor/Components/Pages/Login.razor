@@ -11,7 +11,6 @@
                 <EditForm method="post" FormName="LoginForm" OnValidSubmit="LoginForm" Model="loginDto" autocomplete="off">
                     <h3 class="text-center mb-4">Login</h3>
                     
-                    <!-- Selector tip utilizator -->
                     <div class="mb-4">
                         <label class="form-label fw-bold">Logare ca:</label>
                         <div class="btn-group w-100" role="group">
@@ -40,22 +39,27 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="Email" class="form-label">
-                            Email
-                        </label>
+                        <label for="Email" class="form-label">Email</label>
                         <InputText id="Email" @bind-Value="loginDto.Email" class="form-control border-dark" placeholder="exemplu@email.com"/>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="Password" class="form-label">
-                            Parolă
-                        </label>
+                        <label for="Password" class="form-label">Parolă</label>
                         <InputText id="Password" @bind-Value="loginDto.Password" type="password" class="form-control border-dark" placeholder="••••••••"/>
                     </div>
                     
                     <div class="mb-3">
-                        <button class="btn btn-primary w-100" type="submit">
-                            <i class="bi bi-box-arrow-in-right"></i> Login
+                        <button class="btn btn-primary w-100" type="submit" disabled="@isLoading">
+                            @if (isLoading)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                <span>Se încarcă...</span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-box-arrow-in-right"></i>
+                                <span> Login</span>
+                            }
                         </button>
                     </div>
                     
@@ -86,10 +90,12 @@
     public LoginRequest loginDto { get; set; } = new();
     
     public string ErrorMessage { get; set; } = string.Empty;
+    private bool isLoading = false;
 
     protected async Task LoginForm()
     {
         ErrorMessage = string.Empty;
+        isLoading = true;
         
         try
         {
@@ -99,26 +105,45 @@
             {
                 var result = await response.Content.ReadFromJsonAsync<LoginResponse>();
                 
+                // Salvare JWT token și informații utilizator
+                await LocalStorage.SetItemAsStringAsync("authToken", result.Token);
                 await LocalStorage.SetItemAsStringAsync("userId", result.Id.ToString());
-                await LocalStorage.SetItemAsStringAsync("userEmail", loginDto.Email);
+                await LocalStorage.SetItemAsStringAsync("userEmail", result.Email);
+                await LocalStorage.SetItemAsStringAsync("userRole", result.Role);
                 await LocalStorage.SetItemAsync("isLoggedIn", true);
+                await LocalStorage.SetItemAsync("tokenExpiry", result.ExpiresAt);
                 
-                Console.WriteLine($"Salvat userId: {result.Id}");
-                Console.WriteLine($"Salvat email: {loginDto.Email}");
+                Console.WriteLine($"Login reușit pentru: {result.Email}");
                 
-                navManager.NavigateTo("/Home", forceLoad: true);
+                if (result.Role == "Company")
+                {
+                    navManager.NavigateTo("/CompanyDashboard", forceLoad: true);
+                }
+                else
+                {
+                    navManager.NavigateTo("/Home", forceLoad: true);
+                }
             }
             else
             {
-                var strResponse = await response.Content.ReadAsStringAsync();
-                Console.WriteLine("Login failed: " + strResponse);
-                ErrorMessage = "Email sau parolă greșită.";
+                var errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+                ErrorMessage = errorResponse?.Message ?? "Email sau parolă greșită.";
+                Console.WriteLine($"Login failed: {response.StatusCode}");
             }
+        }
+        catch (HttpRequestException ex)
+        {
+            ErrorMessage = "Nu se poate conecta la server. Verifică dacă API-ul rulează.";
+            Console.WriteLine($"HTTP Exception: {ex.Message}");
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Eroare: {ex.Message}";
+            ErrorMessage = "A apărut o eroare. Te rugăm încearcă din nou.";
             Console.WriteLine($"Exception: {ex}");
+        }
+        finally
+        {
+            isLoading = false;
         }
     }
 
@@ -126,12 +151,20 @@
     {
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
-        public string UserType { get; set; }
+        public string UserType { get; set; } = "Candidat";
     }
     
     public class LoginResponse
     {
-        public string Message { get; set; }
+        public string Token { get; set; }
         public Guid Id { get; set; }
+        public string Email { get; set; }
+        public string Role { get; set; }
+        public DateTime ExpiresAt { get; set; }
+    }
+    
+    public class ErrorResponse
+    {
+        public string Message { get; set; }
     }
 }
